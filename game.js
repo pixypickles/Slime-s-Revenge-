@@ -30,6 +30,7 @@
   let player;
   let enemies;
   let obstacles;
+  let pots;
   let particles;
   let doorOpen;
   let roomCleared;
@@ -69,12 +70,17 @@
       attachedEnemy: null,
       attachTimer: 0,
       hurtTimer: 0,
+      hiddenPot: null,
     };
 
     obstacles = [
       { x: 315, y: 205, w: 86, h: 112, height: 999, type: 'pillar' },
       { x: 585, y: 175, w: 116, h: 54, height: 58, type: 'crate' },
       { x: 510, y: 350, w: 88, h: 58, height: 58, type: 'crate' },
+    ];
+    pots = [
+      { x: 235, y: 355, radius: 28, broken: false },
+      { x: 745, y: 330, radius: 28, broken: false },
     ];
     enemies = [
       makeEnemy(205, 180, 'sword'),
@@ -218,6 +224,31 @@
       p.facingX = mx; p.facingY = my;
     }
 
+    // 壺の中では安全に隠れる。ジャンプで上へ飛び出す。
+    if (p.hiddenPot) {
+      p.x = p.hiddenPot.x;
+      p.y = p.hiddenPot.y + 4;
+      p.z = 0;
+      p.vz = 0;
+      p.dashTimer = 0;
+      p.slam = false;
+      if (input.jumpPressed) {
+        const pot = p.hiddenPot;
+        p.hiddenPot = null;
+        p.z = 20;
+        p.vz = 390;
+        p.airDashUsed = false;
+        p.x += p.facingX * 12;
+        p.y += p.facingY * 12;
+        burst(pot.x, pot.y, 10);
+        messageEl.textContent = '壺から飛び出した！';
+      }
+      for (const e of enemies) updateEnemy(e, dt);
+      updateParticles(dt);
+      clearPressed();
+      return;
+    }
+
     if (input.jumpPressed && p.attachedEnemy) {
       p.attachedEnemy = null;
       p.attachTimer = 0;
@@ -334,7 +365,19 @@
       if (p.z > 0 || p.vz !== 0) {
         p.vz -= 590 * dt; // 弱めの重力
         p.z += p.vz * dt;
-        if (p.z <= 0) {
+        if (p.vz < 0 && p.z <= 34 && !p.slam) {
+          const pot = pots.find((pot) => !pot.broken && Math.hypot(p.x - pot.x, p.y - pot.y) < 24);
+          if (pot) {
+            p.hiddenPot = pot;
+            p.z = 0;
+            p.vz = 0;
+            p.dashJump = false;
+            p.airDashUsed = false;
+            messageEl.textContent = '壺の中に隠れた！ ジャンプで飛び出せます';
+            burst(pot.x, pot.y, 8);
+          }
+        }
+        if (!p.hiddenPot && p.z <= 0) {
           const impact = p.slam;
           p.z = 0;
           p.vz = 0;
@@ -368,12 +411,7 @@
     for (const e of enemies) updateEnemy(e, dt);
     handlePlayerEnemyInteractions();
 
-    for (const pt of particles) {
-      pt.x += pt.vx * dt;
-      pt.y += pt.vy * dt;
-      pt.life -= dt;
-    }
-    particles = particles.filter((pt) => pt.life > 0);
+    updateParticles(dt);
 
     if (!doorOpen && enemies.every((e) => e.state === 'stunned')) {
       doorOpen = true;
@@ -392,6 +430,22 @@
     e.faceCooldown = Math.max(0, e.faceCooldown - dt);
     if (e.state === 'stunned') return;
     if (player.attachedEnemy === e) return;
+    if (player.hiddenPot) {
+      e.attackState = 'idle';
+      e.attackTimer = Math.max(e.attackTimer, 0.4);
+      e.stateTimer -= dt;
+      if (e.stateTimer <= 0) {
+        e.stateTimer = 0.8 + Math.random() * 1.6;
+        e.angle += (Math.random() - 0.5) * 2.2;
+      }
+      const oldX = e.x, oldY = e.y;
+      e.x += Math.cos(e.angle) * e.speed * 0.55 * dt;
+      e.y += Math.sin(e.angle) * e.speed * 0.55 * dt;
+      if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) { e.x = oldX; e.y = oldY; e.angle += Math.PI; }
+      e.x = Math.max(ROOM.left + 30, Math.min(ROOM.right - 30, e.x));
+      e.y = Math.max(ROOM.top + 30, Math.min(ROOM.bottom - 30, e.y));
+      return;
+    }
     if (e.state === 'tripped') {
       e.attackState = 'idle';
       e.stateTimer -= dt;
@@ -588,6 +642,15 @@
     }
   }
 
+  function updateParticles(dt) {
+    for (const pt of particles) {
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.life -= dt;
+    }
+    particles = particles.filter((pt) => pt.life > 0);
+  }
+
   function burst(x, y, count) {
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -611,10 +674,12 @@
     drawDoor();
 
     const drawableObstacles = obstacles.map((o) => ({ ...o, isObstacle: true, sortY: o.y + o.h }));
-    const sorted = [...enemies, player, ...drawableObstacles].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
+    const drawablePots = pots.filter((pot) => !pot.broken).map((pot) => ({ ...pot, isPot: true, sortY: pot.y + pot.radius }));
+    const sorted = [...enemies, player, ...drawableObstacles, ...drawablePots].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     for (const obj of sorted) {
-      if (obj === player) { if (!player.attachedEnemy) drawPlayer(); }
+      if (obj === player) { if (!player.attachedEnemy && !player.hiddenPot) drawPlayer(); }
       else if (obj.isObstacle) drawObstacle(obj);
+      else if (obj.isPot) drawPot(obj);
       else drawEnemy(obj);
     }
 
@@ -645,42 +710,67 @@
   }
 
   function drawRoom() {
-    ctx.fillStyle = '#889879';
+    // 砂色の石床と不揃いな目地で、古い遺跡らしさを出す。
+    ctx.fillStyle = '#807764';
     ctx.fillRect(0, 0, W, H);
-    for (let y = ROOM.top; y < ROOM.bottom; y += 48) {
-      for (let x = ROOM.left; x < ROOM.right; x += 48) {
-        ctx.fillStyle = ((x / 48 + y / 48) % 2) ? '#a9b98f' : '#b5c69a';
-        ctx.fillRect(x, y, 48, 48);
+    const tile = 48;
+    for (let y = ROOM.top; y < ROOM.bottom; y += tile) {
+      for (let x = ROOM.left; x < ROOM.right; x += tile) {
+        const odd = ((x / tile) + (y / tile)) % 2;
+        ctx.fillStyle = odd ? '#c8b98e' : '#d5c79d';
+        ctx.fillRect(x, y, tile, tile);
+        ctx.strokeStyle = 'rgba(73,62,48,.22)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, tile, tile);
       }
     }
+    // 床のひび。
+    ctx.strokeStyle = 'rgba(72,58,43,.42)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(135, 132); ctx.lineTo(157, 145); ctx.lineTo(149, 163); ctx.lineTo(171, 177);
+    ctx.moveTo(690, 390); ctx.lineTo(710, 374); ctx.lineTo(732, 385); ctx.lineTo(742, 366);
+    ctx.stroke();
 
     ctx.strokeStyle = '#11151d';
-    ctx.lineWidth = 14;
+    ctx.lineWidth = 16;
     ctx.strokeRect(ROOM.left, ROOM.top, ROOM.right - ROOM.left, ROOM.bottom - ROOM.top);
-    ctx.strokeStyle = '#59624f';
-    ctx.lineWidth = 20;
+    ctx.strokeStyle = '#756d5c';
+    ctx.lineWidth = 22;
+    ctx.strokeRect(ROOM.left, ROOM.top, ROOM.right - ROOM.left, ROOM.bottom - ROOM.top);
+    ctx.strokeStyle = '#b7aa82';
+    ctx.lineWidth = 10;
     ctx.strokeRect(ROOM.left, ROOM.top, ROOM.right - ROOM.left, ROOM.bottom - ROOM.top);
     ctx.strokeStyle = '#11151d';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.strokeRect(ROOM.left, ROOM.top, ROOM.right - ROOM.left, ROOM.bottom - ROOM.top);
   }
 
   function drawDoor() {
+    ctx.save();
     ctx.lineWidth = 6;
     ctx.strokeStyle = '#11151d';
+    // 石造りの門枠。
+    ctx.fillStyle = '#aaa07f';
+    ctx.fillRect(DOOR.x - 14, ROOM.top - 24, DOOR.w + 28, 58);
+    ctx.strokeRect(DOOR.x - 14, ROOM.top - 24, DOOR.w + 28, 58);
     if (doorOpen) {
       ctx.fillStyle = '#18212a';
-      ctx.fillRect(DOOR.x, ROOM.top - 16, DOOR.w, 48);
-      ctx.strokeRect(DOOR.x, ROOM.top - 16, DOOR.w, 48);
+      ctx.fillRect(DOOR.x, ROOM.top - 14, DOOR.w, 48);
+      ctx.strokeRect(DOOR.x, ROOM.top - 14, DOOR.w, 48);
       ctx.fillStyle = '#d5f1ff';
-      ctx.fillRect(DOOR.x + 15, ROOM.top - 2, DOOR.w - 30, 16);
+      ctx.fillRect(DOOR.x + 15, ROOM.top + 1, DOOR.w - 30, 12);
     } else {
-      ctx.fillStyle = '#7c4932';
-      ctx.fillRect(DOOR.x, ROOM.top - 16, DOOR.w, 48);
-      ctx.strokeRect(DOOR.x, ROOM.top - 16, DOOR.w, 48);
-      ctx.fillStyle = '#bd8257';
-      for (let x = DOOR.x + 16; x < DOOR.x + DOOR.w; x += 23) ctx.fillRect(x, ROOM.top - 12, 8, 38);
+      ctx.fillStyle = '#66503d';
+      ctx.fillRect(DOOR.x, ROOM.top - 14, DOOR.w, 48);
+      ctx.strokeRect(DOOR.x, ROOM.top - 14, DOOR.w, 48);
+      ctx.strokeStyle = '#c3ad7c';
+      ctx.lineWidth = 7;
+      for (let x = DOOR.x + 15; x < DOOR.x + DOOR.w; x += 22) {
+        ctx.beginPath(); ctx.moveTo(x, ROOM.top - 9); ctx.lineTo(x, ROOM.top + 28); ctx.stroke();
+      }
     }
+    ctx.restore();
   }
 
   function drawObstacle(o) {
@@ -690,15 +780,24 @@
     if (o.type === 'pillar') {
       ctx.fillStyle = 'rgba(16,20,25,.24)';
       ctx.beginPath();
-      ctx.ellipse(o.x + o.w / 2 + 8, o.y + o.h + 8, o.w * .55, 18, 0, 0, Math.PI * 2);
+      ctx.ellipse(o.x + o.w / 2 + 8, o.y + o.h + 8, o.w * .58, 18, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#66717a';
+      // 柱頭・柱身・柱礎を分け、中央に縦溝を入れる。
+      const capH = 22;
+      ctx.fillStyle = '#b8ad8c';
+      ctx.beginPath(); ctx.roundRect(o.x, o.y, o.w, capH, 7); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(o.x - 5, o.y + o.h - capH, o.w + 10, capH, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#c9bd98';
+      ctx.beginPath(); ctx.roundRect(o.x + 10, o.y + capH - 2, o.w - 20, o.h - capH * 2 + 4, 6); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#8e8267';
+      ctx.lineWidth = 4;
+      for (let x = o.x + 20; x < o.x + o.w - 14; x += 13) {
+        ctx.beginPath(); ctx.moveTo(x, o.y + capH + 5); ctx.lineTo(x, o.y + o.h - capH - 5); ctx.stroke();
+      }
+      ctx.strokeStyle = '#6d6250'; ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.roundRect(o.x, o.y, o.w, o.h, 12);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#89959d';
-      ctx.fillRect(o.x + 13, o.y + 12, o.w - 26, 18);
-      ctx.strokeRect(o.x + 13, o.y + 12, o.w - 26, 18);
+      ctx.moveTo(o.x + o.w - 23, o.y + 9); ctx.lineTo(o.x + o.w - 34, o.y + 20); ctx.lineTo(o.x + o.w - 25, o.y + 31);
+      ctx.stroke();
     } else {
       ctx.fillStyle = 'rgba(16,20,25,.22)';
       ctx.beginPath();
@@ -714,6 +813,33 @@
       ctx.moveTo(o.x + 12, o.y + 10); ctx.lineTo(o.x + o.w - 12, o.y + o.h - 10);
       ctx.moveTo(o.x + o.w - 12, o.y + 10); ctx.lineTo(o.x + 12, o.y + o.h - 10);
       ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPot(pot) {
+    ctx.save();
+    ctx.translate(pot.x, pot.y);
+    ctx.fillStyle = 'rgba(16,20,25,.25)';
+    ctx.beginPath(); ctx.ellipse(7, 17, 31, 12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 7;
+    ctx.fillStyle = '#b8643f';
+    ctx.beginPath();
+    ctx.moveTo(-18, -12);
+    ctx.quadraticCurveTo(-25, 4, -18, 22);
+    ctx.quadraticCurveTo(0, 34, 18, 22);
+    ctx.quadraticCurveTo(25, 4, 18, -12);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#d98a58';
+    ctx.beginPath(); ctx.ellipse(0, -13, 23, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#402b23';
+    ctx.beginPath(); ctx.ellipse(0, -13, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#7d3f2c'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(-18, 8); ctx.quadraticCurveTo(0, 16, 18, 8); ctx.stroke();
+    if (player.hiddenPot && Math.hypot(player.hiddenPot.x - pot.x, player.hiddenPot.y - pot.y) < 2) {
+      ctx.fillStyle = '#5ee4cf'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(0, -14, 10, Math.PI, 0); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#10141b'; ctx.beginPath(); ctx.arc(-4, -17, 1.8, 0, Math.PI * 2); ctx.arc(4, -17, 1.8, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
   }
