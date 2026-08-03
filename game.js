@@ -77,9 +77,9 @@
       { x: 510, y: 350, w: 88, h: 58, height: 58, type: 'crate' },
     ];
     enemies = [
-      makeEnemy(205, 180),
-      makeEnemy(500, 250),
-      makeEnemy(755, 185),
+      makeEnemy(205, 180, 'sword'),
+      makeEnemy(500, 250, 'spear'),
+      makeEnemy(755, 185, 'sword'),
     ];
     particles = [];
     doorOpen = false;
@@ -87,7 +87,7 @@
     messageEl.textContent = '敵を全員気絶させると扉が開きます';
   }
 
-  function makeEnemy(x, y) {
+  function makeEnemy(x, y, weapon = 'sword') {
     return {
       x, y,
       radius: 25,
@@ -97,6 +97,12 @@
       angle: Math.random() * Math.PI * 2,
       speed: 58 + Math.random() * 18,
       faceCooldown: 0,
+      weapon,
+      attackState: 'idle', // idle, windup, active, recover
+      attackTimer: 0.5 + Math.random(),
+      attackAngle: 0,
+      attackHit: false,
+      strugglePhase: Math.random() * Math.PI * 2,
     };
   }
 
@@ -278,16 +284,20 @@
       if (e.state === 'stunned') {
         p.attachedEnemy = null;
       } else {
-        p.x = e.x;
-        p.y = e.y - 4;
-        p.z = 38;
+        e.attackState = 'idle';
+        e.attackTimer = Math.max(e.attackTimer, 0.45);
+        e.strugglePhase += dt * 14;
+        p.x = e.x + Math.sin(e.strugglePhase) * 3;
+        p.y = e.y - 3;
+        p.z = 39 + Math.cos(e.strugglePhase * 1.7) * 2;
         p.vz = 0;
         p.attachTimer += dt;
         if (!input.stick) {
           p.attachedEnemy = null;
           p.z = 20;
           p.vz = 80;
-        } else if (p.attachTimer >= 1.15) {
+          e.faceCooldown = 0.7;
+        } else if (p.attachTimer >= 1.25) {
           e.state = 'stunned';
           e.stateTimer = 999;
           p.attachedEnemy = null;
@@ -381,19 +391,57 @@
   function updateEnemy(e, dt) {
     e.faceCooldown = Math.max(0, e.faceCooldown - dt);
     if (e.state === 'stunned') return;
+    if (player.attachedEnemy === e) return;
     if (e.state === 'tripped') {
+      e.attackState = 'idle';
       e.stateTimer -= dt;
       if (e.stateTimer <= 0) {
         e.state = 'walk';
         e.angle += Math.PI;
+        e.attackTimer = 0.55;
       }
+      return;
+    }
+
+    const dx = player.x - e.x;
+    const dy = player.y - e.y;
+    const dist = Math.hypot(dx, dy);
+    const reach = e.weapon === 'spear' ? 122 : 82;
+
+    if (e.attackState !== 'idle') {
+      e.attackTimer -= dt;
+      if (e.attackState === 'windup') {
+        e.attackAngle = Math.atan2(dy, dx);
+        if (e.attackTimer <= 0) {
+          e.attackState = 'active';
+          e.attackTimer = e.weapon === 'spear' ? 0.18 : 0.22;
+          e.attackHit = false;
+        }
+      } else if (e.attackState === 'active') {
+        tryEnemyAttackHit(e);
+        if (e.attackTimer <= 0) {
+          e.attackState = 'recover';
+          e.attackTimer = e.weapon === 'spear' ? 0.55 : 0.42;
+        }
+      } else if (e.attackState === 'recover' && e.attackTimer <= 0) {
+        e.attackState = 'idle';
+        e.attackTimer = 0.45 + Math.random() * 0.45;
+      }
+      return;
+    }
+
+    e.attackTimer -= dt;
+    if (dist < reach && player.z < 34 && e.attackTimer <= 0) {
+      e.attackState = 'windup';
+      e.attackTimer = e.weapon === 'spear' ? 0.52 : 0.42;
+      e.attackAngle = Math.atan2(dy, dx);
       return;
     }
 
     e.stateTimer -= dt;
     if (e.stateTimer <= 0) {
       e.stateTimer = 0.7 + Math.random() * 1.5;
-      const aim = Math.atan2(player.y - e.y, player.x - e.x);
+      const aim = Math.atan2(dy, dx);
       e.angle = aim + (Math.random() - 0.5) * 1.1;
     }
     const oldX = e.x, oldY = e.y;
@@ -407,6 +455,29 @@
     if (e.y < ROOM.top + 30 || e.y > ROOM.bottom - 30) e.angle = -e.angle;
     e.x = Math.max(ROOM.left + 30, Math.min(ROOM.right - 30, e.x));
     e.y = Math.max(ROOM.top + 30, Math.min(ROOM.bottom - 30, e.y));
+  }
+
+  function tryEnemyAttackHit(e) {
+    if (e.attackHit || player.invuln > 0 || player.hurtTimer > 0 || player.attachedEnemy) return;
+    const dx = player.x - e.x;
+    const dy = player.y - e.y;
+    const dist = Math.hypot(dx, dy);
+    const angleToPlayer = Math.atan2(dy, dx);
+    const angleDiff = Math.atan2(Math.sin(angleToPlayer - e.attackAngle), Math.cos(angleToPlayer - e.attackAngle));
+    const reach = e.weapon === 'spear' ? 128 : 88;
+    const arc = e.weapon === 'spear' ? 0.34 : 1.05;
+    if (player.z < 32 && dist < reach && Math.abs(angleDiff) < arc) {
+      e.attackHit = true;
+      player.hurtTimer = 0.8;
+      const nx = dist ? dx / dist : 1;
+      const ny = dist ? dy / dist : 0;
+      player.x += nx * 38;
+      player.y += ny * 38;
+      player.dashTimer = 0;
+      messageEl.textContent = e.weapon === 'spear' ? '槍攻撃！ 構えを見たら横へダッシュ！' : '剣攻撃！ ダッシュの無敵時間で回避！';
+      shake = 6;
+      burst(player.x, player.y, 10);
+    }
   }
 
   function circleRectHit(cx, cy, radius, rect) {
@@ -488,6 +559,8 @@
         p.attachedEnemy = e;
         p.attachTimer = 0;
         e.faceCooldown = 0.5;
+        e.attackState = 'idle';
+        e.attackTimer = 0.8;
         continue;
       }
 
@@ -540,7 +613,7 @@
     const drawableObstacles = obstacles.map((o) => ({ ...o, isObstacle: true, sortY: o.y + o.h }));
     const sorted = [...enemies, player, ...drawableObstacles].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     for (const obj of sorted) {
-      if (obj === player) drawPlayer();
+      if (obj === player) { if (!player.attachedEnemy) drawPlayer(); }
       else if (obj.isObstacle) drawObstacle(obj);
       else drawEnemy(obj);
     }
@@ -693,41 +766,80 @@
     if (e.state === 'stunned') {
       ctx.rotate(-0.2);
       ctx.fillStyle = '#d98b5f';
-      ctx.beginPath();
-      ctx.ellipse(0, 10, 31, 17, 0, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 10, 31, 17, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#f4bd8a';
-      ctx.beginPath();
-      ctx.arc(7, -4, 18, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-      ctx.font = '900 22px system-ui';
-      ctx.fillStyle = '#fff7a8';
-      ctx.fillText('★', -23, -22);
-      ctx.fillText('★', 13, -30);
+      ctx.beginPath(); ctx.arc(7, -4, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.font = '900 22px system-ui'; ctx.fillStyle = '#fff7a8';
+      ctx.fillText('★', -23, -22); ctx.fillText('★', 13, -30);
     } else if (e.state === 'tripped') {
       ctx.rotate(0.18);
       ctx.fillStyle = '#d98b5f';
-      ctx.beginPath();
-      ctx.ellipse(0, 7, 34, 18, 0, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 7, 34, 18, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#f4bd8a';
-      ctx.beginPath();
-      ctx.arc(20, -3, 17, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(20, -3, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      drawWeapon(e, true);
     } else {
       ctx.fillStyle = '#d98b5f';
-      ctx.beginPath();
-      ctx.roundRect(-20, -5, 40, 43, 12);
-      ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(-20, -5, 40, 43, 12); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#f4bd8a';
+      ctx.beginPath(); ctx.arc(0, -18, 19, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      if (player.attachedEnemy !== e) {
+        ctx.fillStyle = '#1a1e26';
+        ctx.beginPath(); ctx.arc(-6, -20, 2.5, 0, Math.PI * 2); ctx.arc(6, -20, 2.5, 0, Math.PI * 2); ctx.fill();
+      }
+      drawWeapon(e, false);
+
+      if (player.attachedEnemy === e) {
+        const wobble = Math.sin(e.strugglePhase) * 0.12;
+        ctx.save();
+        ctx.translate(Math.sin(e.strugglePhase) * 3, -19);
+        ctx.rotate(wobble);
+        ctx.fillStyle = '#5ee4cf'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 7;
+        ctx.beginPath(); ctx.ellipse(0, 0, 25, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#d8fff8'; ctx.beginPath(); ctx.ellipse(-8, -7, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#10141b'; ctx.beginPath(); ctx.arc(-7, -6, 2.7, 0, Math.PI * 2); ctx.arc(8, -6, 2.7, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        const ratio = Math.min(1, player.attachTimer / 1.25);
+        ctx.fillStyle = '#11151d'; ctx.fillRect(-31, -58, 62, 10);
+        ctx.fillStyle = '#8ff57f'; ctx.fillRect(-28, -55, 56 * ratio, 4);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawWeapon(e, dropped) {
+    ctx.save();
+    if (dropped) {
+      ctx.translate(-20, 18); ctx.rotate(0.65);
+    } else {
+      ctx.rotate(e.attackAngle || e.angle || 0);
+    }
+
+    const windup = e.attackState === 'windup';
+    const active = e.attackState === 'active';
+    if (!dropped && (windup || active)) {
+      ctx.globalAlpha = windup ? 0.28 : 0.48;
+      ctx.strokeStyle = active ? '#fff2a8' : '#ffb071';
+      ctx.lineWidth = e.weapon === 'spear' ? 12 : 18;
       ctx.beginPath();
-      ctx.arc(0, -18, 19, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#1a1e26';
-      ctx.beginPath();
-      ctx.arc(-6, -20, 2.5, 0, Math.PI * 2);
-      ctx.arc(6, -20, 2.5, 0, Math.PI * 2);
-      ctx.fill();
+      if (e.weapon === 'spear') { ctx.moveTo(25, 0); ctx.lineTo(126, 0); }
+      else { ctx.arc(0, 0, 82, -0.72, 0.72); }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.strokeStyle = '#0a0d12'; ctx.fillStyle = '#d7e2e7'; ctx.lineWidth = 6;
+    if (e.weapon === 'spear') {
+      ctx.strokeStyle = '#69452d'; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.moveTo(12, 8); ctx.lineTo(86, 8); ctx.stroke();
+      ctx.fillStyle = '#d7e2e7'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(102, 8); ctx.lineTo(82, -2); ctx.lineTo(82, 18); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.strokeStyle = '#69452d'; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.moveTo(13, 8); ctx.lineTo(31, 8); ctx.stroke();
+      ctx.fillStyle = '#d7e2e7'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(27, 2); ctx.lineTo(74, 8); ctx.lineTo(27, 14); ctx.closePath(); ctx.fill(); ctx.stroke();
     }
     ctx.restore();
   }
