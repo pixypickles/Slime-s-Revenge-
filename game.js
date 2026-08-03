@@ -36,6 +36,7 @@
   let obstacles;
   let pots;
   let particles;
+  let arrows;
   let plants;
   let doorOpen;
   let roomCleared;
@@ -65,10 +66,10 @@
   function roomData(index) {
     const rooms = [
       { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], plants:[{x:190,y:385,type:'heal'}], enemies:[[235,190,'sword']] },
-      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], enemies:[[200,180,'sword'],[745,180,'spear']] },
+      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], enemies:[[200,180,'sword'],[745,180,'spear'],[480,170,'bow']] },
       { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
-      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'sword'],[790,160,'spear']] },
-      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], enemies:[[190,170,'sword'],[350,335,'spear'],[610,335,'spear'],[770,170,'sword']] },
+      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'bow'],[790,160,'spear']] },
+      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], enemies:[[190,170,'sword'],[350,335,'bow'],[610,335,'spear'],[770,170,'sword']] },
       { name: '守護隊長の間', obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
@@ -84,7 +85,7 @@
     pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0, used:false}));
     plants = (data.plants || []).map(o => ({...o, fruitReady:false, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
     enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
-    particles = []; doorOpen = false; roomCleared = false; shake = 0;
+    particles = []; arrows = []; doorOpen = false; roomCleared = false; shake = 0;
     messageEl.textContent = `第${currentRoomIndex + 1}部屋「${data.name}」— 敵を全員無力化せよ`;
     if (save) saveProgress();
   }
@@ -123,7 +124,7 @@
   function makeEnemy(x, y, weapon = 'sword') {
     const isBoss = weapon === 'boss';
     if (isBoss) weapon = 'sword';
-    const patrolRadius = isBoss ? 90 : (weapon === 'spear' ? 115 : 145);
+    const patrolRadius = isBoss ? 90 : (weapon === 'spear' ? 115 : (weapon === 'bow' ? 165 : 145));
     return {
       x, y,
       radius: isBoss ? 38 : 25,
@@ -133,7 +134,7 @@
       state: 'walk', // walk, tripped, stunned（既存戦闘状態）
       stateTimer: 0,
       angle: Math.random() * Math.PI * 2,
-      speed: isBoss ? 92 : 58 + Math.random() * 18,
+      speed: isBoss ? 92 : (weapon === 'bow' ? 72 : 58 + Math.random() * 18),
       faceCooldown: 0,
       weapon,
       attackState: 'idle', // idle, windup, active, recover
@@ -144,8 +145,8 @@
 
       // v0.9 敵AI。戦闘状態とは分離し、既存の転倒・気絶処理を維持する。
       aiState: 'patrol', // patrol, chase, search, investigatePot
-      visionRange: isBoss ? 380 : (weapon === 'spear' ? 300 : 270),
-      visionHalfAngle: weapon === 'spear' ? 0.62 : 0.78,
+      visionRange: isBoss ? 380 : (weapon === 'spear' ? 300 : (weapon === 'bow' ? 390 : 270)),
+      visionHalfAngle: weapon === 'spear' ? 0.62 : (weapon === 'bow' ? 0.72 : 0.78),
       alert: 0,
       lostSightTimer: 0,
       searchTimer: 0,
@@ -326,6 +327,7 @@
       }
 
       for (const e of enemies) updateEnemy(e, dt);
+      updateArrows(dt);
       updateParticles(dt);
       checkDoorOpen();
       clearPressed();
@@ -500,6 +502,7 @@
     for (const e of enemies) updateEnemy(e, dt);
     handlePlayerEnemyInteractions();
     updatePlants(dt);
+    updateArrows(dt);
 
     updateParticles(dt);
 
@@ -573,7 +576,7 @@
       } else {
         hitEnemy.attackState = 'recover';
         hitEnemy.attackTimer = 0.35;
-        messageEl.textContent = '剣兵に壺を斬り割られた！';
+        messageEl.textContent = hitEnemy.weapon === 'bow' ? '弓兵の矢で壺が割れた！' : '剣兵に壺を斬り割られた！';
       }
     } else if (cause === 'sword') {
       messageEl.textContent = '剣兵に壺を斬り割られた！';
@@ -581,6 +584,7 @@
 
     exitPot(pot, true, -player.potRollX || 0, -player.potRollY || -1);
     if (hitEnemy?.weapon === 'spear') messageEl.textContent = '壺が槍兵を直撃！ 槍兵を気絶させた！';
+    else if (cause === 'arrow' || hitEnemy?.weapon === 'bow') messageEl.textContent = '弓兵の矢で壺が割れ、スライムが飛び出した！';
     else if (cause === 'sword' || hitEnemy?.weapon === 'sword') messageEl.textContent = '剣兵に壺を斬り割られた！ スライムが飛び出した！';
     checkDoorOpen();
   }
@@ -652,7 +656,12 @@
       const pot = player.hiddenPot;
       e.targetPot = pot;
       e.aiState = 'investigatePot';
-      if (e.weapon === 'sword') {
+      if (e.weapon === 'bow') {
+        const dx = pot.x - e.x, dy = pot.y - e.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        e.angle = Math.atan2(dy, dx);
+        moveEnemyToward(e, e.x - dx, e.y - dy, e.speed * 1.25, dt);
+      } else if (e.weapon === 'sword') {
         const dx = pot.x - e.x;
         const dy = pot.y - e.y;
         const dist = Math.hypot(dx, dy);
@@ -758,6 +767,12 @@
     const dx = targetX - e.x;
     const dy = targetY - e.y;
     const dist = Math.hypot(dx, dy);
+
+    if (e.weapon === 'bow') {
+      updateArcherCombat(e, dt, targetX, targetY, dist);
+      return;
+    }
+
     const reach = e.weapon === 'spear' ? 122 : 82;
 
     if (e.attackState !== 'idle') {
@@ -790,6 +805,92 @@
       return;
     }
     moveEnemyToward(e, targetX, targetY, e.speed * 1.12, dt);
+  }
+
+  function updateArcherCombat(e, dt, targetX, targetY, dist) {
+    const dx = targetX - e.x, dy = targetY - e.y;
+    e.angle = Math.atan2(dy, dx);
+
+    if (e.attackState !== 'idle') {
+      e.attackTimer -= dt;
+      if (e.attackState === 'windup') {
+        if (!player.hiddenPot) e.attackAngle = Math.atan2(player.y - e.y, player.x - e.x);
+        if (e.attackTimer <= 0) {
+          fireArrow(e);
+          e.attackState = 'recover';
+          e.attackTimer = 0.72;
+        }
+      } else if (e.attackState === 'recover' && e.attackTimer <= 0) {
+        e.attackState = 'idle';
+        e.attackTimer = 0.45 + Math.random() * 0.35;
+      }
+      return;
+    }
+
+    e.attackTimer -= dt;
+    if (dist < 155) {
+      moveEnemyAwayFrom(e, targetX, targetY, e.speed * 1.35, dt);
+      return;
+    }
+    if (dist > 330) {
+      moveEnemyToward(e, targetX, targetY, e.speed * 0.92, dt);
+      return;
+    }
+    if (!player.hiddenPot && player.z < 50 && e.attackTimer <= 0 && !pillarBlocksSight(e.x, e.y, player.x, player.y)) {
+      e.attackState = 'windup';
+      e.attackTimer = 0.58;
+      e.attackAngle = Math.atan2(player.y - e.y, player.x - e.x);
+      return;
+    }
+    if (dist < 205) moveEnemyAwayFrom(e, targetX, targetY, e.speed * 0.72, dt);
+  }
+
+  function moveEnemyAwayFrom(e, tx, ty, speed, dt) {
+    const dx = e.x - tx, dy = e.y - ty;
+    const dist = Math.hypot(dx, dy) || 1;
+    const fleeX = clamp(e.x + dx / dist * 120, ROOM.left + 35, ROOM.right - 35);
+    const fleeY = clamp(e.y + dy / dist * 120, ROOM.top + 35, ROOM.bottom - 35);
+    moveEnemyToward(e, fleeX, fleeY, speed, dt);
+    e.angle = Math.atan2(ty - e.y, tx - e.x);
+  }
+
+  function fireArrow(e) {
+    const a = e.attackAngle;
+    arrows.push({ x:e.x + Math.cos(a)*32, y:e.y + Math.sin(a)*32, vx:Math.cos(a)*430, vy:Math.sin(a)*430, angle:a, radius:7, life:2.2, owner:e });
+    burst(e.x + Math.cos(a)*28, e.y + Math.sin(a)*28, 5);
+  }
+
+  function updateArrows(dt) {
+    for (const arrow of arrows) {
+      if (arrow.dead) continue;
+      arrow.life -= dt;
+      const steps = Math.max(1, Math.ceil(Math.hypot(arrow.vx, arrow.vy) * dt / 12));
+      for (let i=0; i<steps && !arrow.dead; i++) {
+        arrow.x += arrow.vx * dt / steps;
+        arrow.y += arrow.vy * dt / steps;
+        if (arrow.x < ROOM.left || arrow.x > ROOM.right || arrow.y < ROOM.top || arrow.y > ROOM.bottom || circleHitsAnyObstacle(arrow.x, arrow.y, arrow.radius, 0)) {
+          arrow.dead = true;
+          burst(arrow.x, arrow.y, 4);
+          break;
+        }
+        const pot = pots.find(p => !p.broken && Math.hypot(p.x-arrow.x,p.y-arrow.y) < p.radius + arrow.radius);
+        if (pot) {
+          arrow.dead = true;
+          if (player.hiddenPot === pot) breakPot(pot, 'arrow', arrow.owner);
+          else burst(arrow.x, arrow.y, 5);
+          break;
+        }
+        if (!player.hiddenPot && player.z < 38 && player.invuln <= 0 && player.hurtTimer <= 0 && Math.hypot(player.x-arrow.x, player.y-arrow.y) < player.radius + arrow.radius) {
+          arrow.dead = true;
+          damagePlayer(1, '矢に射抜かれた！ HPが1減った');
+          player.x += Math.cos(arrow.angle) * 30;
+          player.y += Math.sin(arrow.angle) * 30;
+          shake = 5; burst(player.x, player.y, 9);
+        }
+      }
+      if (arrow.life <= 0) arrow.dead = true;
+    }
+    arrows = arrows.filter(a => !a.dead);
   }
 
   function updatePotInvestigation(e, dt) {
@@ -989,18 +1090,38 @@
 
   function resolvePlayerObstacles(oldX, oldY) {
     const p = player;
-    for (const o of obstacles) {
-      if (p.z >= o.height || !circleRectHit(p.x, p.y, p.radius, o)) continue;
+    let collided = false;
 
-      // 軸ごとに戻すと、障害物の縁に沿って滑れる。
-      const hitXOnly = circleRectHit(p.x, oldY, p.radius, o);
-      const hitYOnly = circleRectHit(oldX, p.y, p.radius, o);
-      if (!hitXOnly) p.y = oldY;
-      else if (!hitYOnly) p.x = oldX;
-      else { p.x = oldX; p.y = oldY; }
-
-      if (p.dashTimer > 0) p.dashTimer = 0;
+    // 柱の角や根元へ斜めに入っても、最短方向へ押し出して接線方向の移動を残す。
+    for (let pass = 0; pass < 4; pass++) {
+      let pushed = false;
+      for (const o of obstacles) {
+        if (p.z >= o.height || !circleRectHit(p.x, p.y, p.radius, o)) continue;
+        collided = pushed = true;
+        const qx = clamp(p.x, o.x, o.x + o.w);
+        const qy = clamp(p.y, o.y, o.y + o.h);
+        let dx = p.x - qx, dy = p.y - qy;
+        let dist = Math.hypot(dx, dy);
+        if (dist > 0.0001) {
+          const push = p.radius - dist + 0.6;
+          p.x += dx / dist * push;
+          p.y += dy / dist * push;
+        } else {
+          const left = Math.abs(p.x - o.x), right = Math.abs(o.x + o.w - p.x);
+          const top = Math.abs(p.y - o.y), bottom = Math.abs(o.y + o.h - p.y);
+          const m = Math.min(left,right,top,bottom);
+          if (m === left) p.x = o.x - p.radius - 0.6;
+          else if (m === right) p.x = o.x + o.w + p.radius + 0.6;
+          else if (m === top) p.y = o.y - p.radius - 0.6;
+          else p.y = o.y + o.h + p.radius + 0.6;
+        }
+      }
+      if (!pushed) break;
     }
+
+    p.x = clamp(p.x, ROOM.left + p.radius, ROOM.right - p.radius);
+    p.y = clamp(p.y, ROOM.top + p.radius, ROOM.bottom - p.radius);
+    if (collided && p.dashTimer > 0) p.dashTimer = Math.min(p.dashTimer, 0.08);
   }
 
   function findStickSurface(p) {
@@ -1127,6 +1248,8 @@
       else if (obj.isPot) drawPot(obj);
       else drawEnemy(obj);
     }
+
+    for (const arrow of arrows) drawArrow(arrow);
 
     for (const pt of particles) {
       ctx.globalAlpha = Math.max(0, pt.life * 2);
@@ -1365,6 +1488,19 @@
     ctx.restore();
   }
 
+  function drawArrow(arrow) {
+    ctx.save();
+    ctx.translate(arrow.x, arrow.y);
+    ctx.rotate(arrow.angle);
+    ctx.strokeStyle='#0a0d12'; ctx.lineWidth=6; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(17,0); ctx.stroke();
+    ctx.strokeStyle='#b57a42'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(13,0); ctx.stroke();
+    ctx.fillStyle='#dbe6e9'; ctx.strokeStyle='#0a0d12'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(22,0); ctx.lineTo(10,-7); ctx.lineTo(10,7); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#e8d6b7'; ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(-27,-6); ctx.lineTo(-24,0); ctx.lineTo(-27,6); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
   function drawPlayer() {
     const p = player;
     const shadowScale = Math.max(0.35, 1 - p.z / 250);
@@ -1475,16 +1611,23 @@
     if (!dropped && (windup || active)) {
       ctx.globalAlpha = windup ? 0.28 : 0.48;
       ctx.strokeStyle = active ? '#fff2a8' : '#ffb071';
-      ctx.lineWidth = e.weapon === 'spear' ? 12 : 18;
+      ctx.lineWidth = e.weapon === 'spear' ? 12 : (e.weapon === 'bow' ? 7 : 18);
       ctx.beginPath();
       if (e.weapon === 'spear') { ctx.moveTo(25, 0); ctx.lineTo(126, 0); }
+      else if (e.weapon === 'bow') { ctx.moveTo(22, 0); ctx.lineTo(390, 0); }
       else { ctx.arc(0, 0, 82, -0.72, 0.72); }
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
     ctx.strokeStyle = '#0a0d12'; ctx.fillStyle = '#d7e2e7'; ctx.lineWidth = 6;
-    if (e.weapon === 'spear') {
+    if (e.weapon === 'bow') {
+      ctx.strokeStyle = '#704522'; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(35, 5, 25, -1.15, 1.15); ctx.stroke();
+      ctx.strokeStyle = '#e5d7ba'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(45,-18); ctx.lineTo(25,5); ctx.lineTo(45,28); ctx.stroke();
+      if (e.attackState === 'windup') { ctx.strokeStyle='#b57a42'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(18,5); ctx.lineTo(62,5); ctx.stroke(); }
+    } else if (e.weapon === 'spear') {
       ctx.strokeStyle = '#69452d'; ctx.lineWidth = 8;
       ctx.beginPath(); ctx.moveTo(12, 8); ctx.lineTo(86, 8); ctx.stroke();
       ctx.fillStyle = '#d7e2e7'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
@@ -1506,7 +1649,7 @@
     requestAnimationFrame(frame);
   }
 
-  player = makePlayer(); enemies = []; obstacles = []; pots = []; plants = []; particles = []; doorOpen = false; roomCleared = false;
+  player = makePlayer(); enemies = []; obstacles = []; pots = []; plants = []; particles = []; arrows = []; doorOpen = false; roomCleared = false;
   showTitle();
   requestAnimationFrame(frame);
 })();
