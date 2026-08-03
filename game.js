@@ -36,6 +36,7 @@
   let obstacles;
   let pots;
   let particles;
+  let plants;
   let doorOpen;
   let roomCleared;
   let lastTime = performance.now();
@@ -43,7 +44,9 @@
   let currentRoomIndex = 0;
   let gameMode = 'title';
   const TOTAL_ROOMS = 6;
-  const SAVE_KEY = 'slimesRevengeSaveV1';
+  const SAVE_KEY = 'slimesRevengeSaveV2';
+  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV1';
+  let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
 
   function makePlayer() {
     return {
@@ -55,17 +58,18 @@
       wallJumpTimer: 0, wallJumpX: 0, wallJumpY: 0,
       attachedEnemy: null, attachTimer: 0, hurtTimer: 0, hiddenPot: null,
       potCharge: 0, potRolling: false, potRollX: 0, potRollY: -1,
+      hp: runStats.hp, maxHp: runStats.maxHp, deathTimer: 0,
     };
   }
 
   function roomData(index) {
     const rooms = [
-      { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], enemies:[[235,190,'sword']] },
-      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360}], enemies:[[200,180,'sword'],[745,180,'spear']] },
-      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
-      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380}], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'sword'],[790,160,'spear']] },
-      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], enemies:[[190,170,'sword'],[350,335,'spear'],[610,335,'spear'],[770,170,'sword']] },
-      { name: '守護隊長の間', obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380},{x:675,y:380}], enemies:[[480,205,'boss']] },
+      { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], plants:[{x:190,y:385,type:'heal'}], enemies:[[235,190,'sword']] },
+      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], enemies:[[200,180,'sword'],[745,180,'spear']] },
+      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
+      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'sword'],[790,160,'spear']] },
+      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], enemies:[[190,170,'sword'],[350,335,'spear'],[610,335,'spear'],[770,170,'sword']] },
+      { name: '守護隊長の間', obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
   }
@@ -74,8 +78,11 @@
     currentRoomIndex = clamp(index, 0, TOTAL_ROOMS - 1);
     const data = roomData(currentRoomIndex);
     player = makePlayer();
+    player.hp = clamp(runStats.hp, 1, runStats.maxHp);
+    player.maxHp = runStats.maxHp;
     obstacles = data.obstacles.map(o => ({...o}));
-    pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0}));
+    pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0, used:false}));
+    plants = (data.plants || []).map(o => ({...o, fruitReady:false, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
     enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
     particles = []; doorOpen = false; roomCleared = false; shake = 0;
     messageEl.textContent = `第${currentRoomIndex + 1}部屋「${data.name}」— 敵を全員無力化せよ`;
@@ -83,13 +90,22 @@
   }
 
   function saveProgress() {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ room: currentRoomIndex, updated: Date.now() })); } catch (_) {}
+    runStats.hp = player?.hp ?? runStats.hp;
+    runStats.maxHp = player?.maxHp ?? runStats.maxHp;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ room: currentRoomIndex, hp: runStats.hp, maxHp: runStats.maxHp, maxFruitTaken: runStats.maxFruitTaken, updated: Date.now() })); } catch (_) {}
     updateContinueButton();
   }
 
-  function readSave() {
-    try { const v = JSON.parse(localStorage.getItem(SAVE_KEY)); return Number.isInteger(v?.room) ? clamp(v.room,0,TOTAL_ROOMS-1) : null; } catch (_) { return null; }
+  function readSaveData() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem(LEGACY_SAVE_KEY);
+      const v = JSON.parse(raw);
+      if (!Number.isInteger(v?.room)) return null;
+      return { room: clamp(v.room,0,TOTAL_ROOMS-1), hp: clamp(Number(v.hp) || 5, 1, Math.max(5, Number(v.maxHp) || 5)), maxHp: Math.max(5, Number(v.maxHp) || 5), maxFruitTaken: Array.isArray(v.maxFruitTaken) ? v.maxFruitTaken : [] };
+    } catch (_) { return null; }
   }
+
+  function readSave() { return readSaveData()?.room ?? null; }
 
   function updateContinueButton() {
     const room = readSave();
@@ -98,7 +114,10 @@
   }
 
   function showTitle() { gameMode = 'title'; titleScreen.classList.remove('hidden'); updateContinueButton(); }
-  function startGame(room) { gameMode = 'playing'; titleScreen.classList.add('hidden'); loadRoom(room); }
+  function startGame(room, saved = null) {
+    runStats = saved ? { hp:saved.hp, maxHp:saved.maxHp, maxFruitTaken:[...saved.maxFruitTaken] } : { hp:5, maxHp:5, maxFruitTaken:[] };
+    gameMode = 'playing'; titleScreen.classList.add('hidden'); loadRoom(room);
+  }
   function resetGame() { if (gameMode === 'playing') loadRoom(currentRoomIndex, false); else showTitle(); }
 
   function makeEnemy(x, y, weapon = 'sword') {
@@ -241,12 +260,18 @@
   joystick.addEventListener('lostpointercapture', releaseJoystick);
 
   resetBtn.addEventListener('click', resetGame);
-  startBtn.addEventListener('click', () => { try { localStorage.removeItem(SAVE_KEY); } catch (_) {} startGame(0); });
-  continueBtn.addEventListener('click', () => startGame(readSave() ?? 0));
+  startBtn.addEventListener('click', () => { try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(LEGACY_SAVE_KEY); } catch (_) {} startGame(0); });
+  continueBtn.addEventListener('click', () => { const saved = readSaveData(); startGame(saved?.room ?? 0, saved); });
 
   function update(dt) {
     if (gameMode !== 'playing') { clearPressed(); return; }
     const p = player;
+    if (p.deathTimer > 0) {
+      p.deathTimer -= dt;
+      updateParticles(dt);
+      if (p.deathTimer <= 0) { runStats.hp = runStats.maxHp; loadRoom(currentRoomIndex, false); messageEl.textContent = '力を取り戻して部屋の入口から再挑戦！'; }
+      clearPressed(); return;
+    }
     p.dashCooldown = Math.max(0, p.dashCooldown - dt);
     p.dashTimer = Math.max(0, p.dashTimer - dt);
     p.invuln = Math.max(0, p.invuln - dt);
@@ -430,8 +455,14 @@
             p.vz = 0;
             p.dashJump = false;
             p.airDashUsed = false;
-            messageEl.textContent = '壺の中に隠れた！ 見られていなければ安全です';
-            burst(pot.x, pot.y, 8);
+            if (pot.mystic && !pot.used) {
+              pot.used = true;
+              healPlayer(2, '神秘の水がスライムへ染み込み、HPが2回復した！');
+              burst(pot.x, pot.y, 20);
+            } else {
+              messageEl.textContent = pot.mystic ? '水を吸収した神秘の壺に隠れた' : '壺の中に隠れた！ 見られていなければ安全です';
+              burst(pot.x, pot.y, 8);
+            }
             alertEnemiesToPot(pot, 0, true);
           }
         }
@@ -468,6 +499,7 @@
 
     for (const e of enemies) updateEnemy(e, dt);
     handlePlayerEnemyInteractions();
+    updatePlants(dt);
 
     updateParticles(dt);
 
@@ -476,6 +508,7 @@
       roomCleared = true; burst(p.x, p.y, 28);
       if (currentRoomIndex < TOTAL_ROOMS - 1) {
         messageEl.textContent = '次の部屋へ…';
+        runStats.hp = p.hp; runStats.maxHp = p.maxHp;
         loadRoom(currentRoomIndex + 1);
       } else {
         gameMode = 'complete';
@@ -501,7 +534,8 @@
   function checkDoorOpen() {
     if (!doorOpen && enemies.every((e) => e.state === 'stunned')) {
       doorOpen = true;
-      messageEl.textContent = '扉が開いた！ 上の出口へ！';
+      const fruit = plants.some(p => p.fruitReady && !p.consumed);
+      messageEl.textContent = fruit ? '敵を全員倒した！ 植物に実がなった。くっつきで吸収できる！' : '扉が開いた！ 上の出口へ！';
     }
   }
 
@@ -875,15 +909,70 @@
     const arc = e.weapon === 'spear' ? 0.34 : 1.05;
     if (player.z < 32 && dist < reach && Math.abs(angleDiff) < arc) {
       e.attackHit = true;
-      player.hurtTimer = 0.8;
+      const damage = e.isBoss ? 2 : 1;
+      damagePlayer(damage, e.weapon === 'spear' ? '槍攻撃！ HPが1減った' : (e.isBoss ? '守護隊長の剣撃！ HPが2減った' : '剣攻撃！ HPが1減った'));
       const nx = dist ? dx / dist : 1;
       const ny = dist ? dy / dist : 0;
       player.x += nx * 38;
       player.y += ny * 38;
       player.dashTimer = 0;
-      messageEl.textContent = e.weapon === 'spear' ? '槍攻撃！ 構えを見たら横へダッシュ！' : '剣攻撃！ ダッシュの無敵時間で回避！';
       shake = 6;
       burst(player.x, player.y, 10);
+    }
+  }
+
+
+  function damagePlayer(amount, message) {
+    if (player.invuln > 0 || player.hurtTimer > 0 || player.deathTimer > 0) return false;
+    player.hp = Math.max(0, player.hp - amount);
+    runStats.hp = player.hp;
+    player.hurtTimer = 0.8;
+    player.invuln = Math.max(player.invuln, 0.65);
+    messageEl.textContent = message;
+    if (player.hp <= 0) {
+      player.deathTimer = 1.15;
+      player.dashTimer = 0;
+      player.attachedEnemy = null;
+      if (player.hiddenPot) exitPot(player.hiddenPot, false);
+      messageEl.textContent = 'HPがなくなった… 部屋の入口から再挑戦';
+      shake = 11;
+      burst(player.x, player.y, 30);
+    }
+    return true;
+  }
+
+  function healPlayer(amount, message) {
+    const before = player.hp;
+    player.hp = Math.min(player.maxHp, player.hp + amount);
+    runStats.hp = player.hp;
+    messageEl.textContent = player.hp > before ? message : 'HPは満タンです';
+    saveProgress();
+  }
+
+  function updatePlants(dt) {
+    const allDefeated = enemies.every(e => e.state === 'stunned');
+    for (const plant of plants) {
+      plant.pulse += dt * 3;
+      if (allDefeated && !plant.consumed) plant.fruitReady = true;
+      if (!plant.fruitReady || plant.consumed) continue;
+      const dist = Math.hypot(player.x - plant.x, player.y - plant.y);
+      if (input.stickPressed && player.z < 28 && dist < 58) {
+        plant.consumed = true;
+        plant.fruitReady = false;
+        if (plant.type === 'max') {
+          player.maxHp += 1;
+          player.hp = Math.min(player.maxHp, player.hp + 1);
+          runStats.maxHp = player.maxHp;
+          runStats.hp = player.hp;
+          if (plant.id && !runStats.maxFruitTaken.includes(plant.id)) runStats.maxFruitTaken.push(plant.id);
+          messageEl.textContent = '色違いのゼリーの実を吸収！ 最大HPが1増えた！';
+          burst(plant.x, plant.y, 28);
+          saveProgress();
+        } else {
+          healPlayer(1, 'ゼリーの実を吸収してHPが1回復した！');
+          burst(plant.x, plant.y, 18);
+        }
+      }
     }
   }
 
@@ -971,12 +1060,12 @@
         continue;
       }
 
-      if (dist < p.radius + e.radius - 4 && p.z < 16 && e.state === 'walk' && p.invuln <= 0 && p.hurtTimer <= 0) {
-        p.hurtTimer = 0.7;
+      if (dist < p.radius + e.radius - 4 && p.z < 16 && e.state === 'walk') {
+        // 敵本体との接触ではダメージを受けない。互いの中心が重ならないよう押し戻すだけ。
         const len = dist || 1;
-        p.x += (dx / len) * 26;
-        p.y += (dy / len) * 26;
-        messageEl.textContent = '接触！ ダッシュ回避を使おう';
+        const overlap = p.radius + e.radius - dist;
+        p.x += (dx / len) * Math.max(2, overlap * 0.55);
+        p.y += (dy / len) * Math.max(2, overlap * 0.55);
       }
     }
   }
@@ -1027,6 +1116,8 @@
     drawDoor();
     drawEnemySenses();
 
+    for (const plant of plants) drawPlant(plant);
+
     const drawableObstacles = obstacles.map((o) => ({ ...o, isObstacle: true, sortY: o.y + o.h }));
     const drawablePots = pots.filter((pot) => !pot.broken).map((pot) => ({ ...pot, isPot: true, sortY: pot.y + pot.radius }));
     const sorted = [...enemies, player, ...drawableObstacles, ...drawablePots].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
@@ -1050,6 +1141,7 @@
     ctx.strokeStyle = '#11151d'; ctx.lineWidth = 5;
     const roomLabel = `ROOM ${currentRoomIndex + 1} / ${TOTAL_ROOMS}`;
     ctx.strokeText(roomLabel, 82, 91); ctx.fillText(roomLabel, 82, 91);
+    drawHealthHud();
     const boss = enemies.find(e => e.isBoss && e.state !== 'stunned');
     if (boss) {
       ctx.fillStyle = '#171b22'; ctx.fillRect(W/2-180, 76, 360, 20);
@@ -1200,26 +1292,70 @@
     ctx.restore();
   }
 
+
+  function drawHealthHud() {
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.font = '900 16px system-ui';
+    ctx.strokeStyle = '#11151d'; ctx.lineWidth = 5; ctx.fillStyle = '#fff';
+    ctx.strokeText(`HP ${player.hp} / ${player.maxHp}`, 82, 118);
+    ctx.fillText(`HP ${player.hp} / ${player.maxHp}`, 82, 118);
+    for (let i = 0; i < player.maxHp; i++) {
+      const x = 84 + i * 24, y = 132;
+      ctx.fillStyle = i < player.hp ? '#64f0bf' : '#303944';
+      ctx.strokeStyle = '#10161d'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      if (i < player.hp) { ctx.fillStyle='rgba(255,255,255,.75)'; ctx.beginPath(); ctx.arc(x-2,y-3,2.5,0,Math.PI*2); ctx.fill(); }
+    }
+    ctx.restore();
+  }
+
+  function drawPlant(plant) {
+    ctx.save();
+    ctx.translate(plant.x, plant.y);
+    ctx.strokeStyle = '#183f2c'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0,14); ctx.quadraticCurveTo(-4,-8,0,-28); ctx.stroke();
+    ctx.fillStyle = '#3fa968';
+    ctx.beginPath(); ctx.ellipse(-12,-5,14,7,-0.45,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(12,-14,14,7,0.45,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#234d35'; ctx.beginPath(); ctx.ellipse(0,15,20,8,0,0,Math.PI*2); ctx.fill();
+    if (plant.fruitReady && !plant.consumed) {
+      const bob = Math.sin(plant.pulse) * 3;
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = plant.type === 'max' ? '#ff8df5' : '#8fffc8';
+      ctx.fillStyle = plant.type === 'max' ? '#dd72ff' : '#74edaa';
+      ctx.beginPath(); ctx.arc(0,-36+bob,12,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(-4,-40+bob,3,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.textAlign='center'; ctx.font='800 13px system-ui'; ctx.fillStyle='#fff'; ctx.strokeStyle='#111'; ctx.lineWidth=4;
+      ctx.strokeText('くっつき',0,-57+bob); ctx.fillText('くっつき',0,-57+bob);
+    }
+    ctx.restore();
+  }
+
   function drawPot(pot) {
     ctx.save();
     const potWobble = pot.shake > 0 ? Math.sin(performance.now() * 0.055) * pot.shake * 5 : 0;
     ctx.translate(pot.x + potWobble, pot.y);
+    if (pot.mystic && !pot.used) { ctx.shadowBlur = 22; ctx.shadowColor = '#8cecff'; }
     if (pot.rolling) ctx.rotate(performance.now() * 0.018 * (player.potRollX >= 0 ? 1 : -1));
     ctx.fillStyle = 'rgba(16,20,25,.25)';
     ctx.beginPath(); ctx.ellipse(7, 17, 31, 12, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 7;
-    ctx.fillStyle = '#b8643f';
+    ctx.fillStyle = pot.mystic ? (pot.used ? '#557b86' : '#55b9d1') : '#b8643f';
     ctx.beginPath();
     ctx.moveTo(-18, -12);
     ctx.quadraticCurveTo(-25, 4, -18, 22);
     ctx.quadraticCurveTo(0, 34, 18, 22);
     ctx.quadraticCurveTo(25, 4, 18, -12);
     ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#d98a58';
+    ctx.fillStyle = pot.mystic ? (pot.used ? '#7597a0' : '#8eeaff') : '#d98a58';
     ctx.beginPath(); ctx.ellipse(0, -13, 23, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#402b23';
+    ctx.fillStyle = pot.mystic && !pot.used ? '#d7fbff' : '#402b23';
     ctx.beginPath(); ctx.ellipse(0, -13, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#7d3f2c'; ctx.lineWidth = 4;
+    ctx.strokeStyle = pot.mystic ? '#36788a' : '#7d3f2c'; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(-18, 8); ctx.quadraticCurveTo(0, 16, 18, 8); ctx.stroke();
     if (player.hiddenPot && Math.hypot(player.hiddenPot.x - pot.x, player.hiddenPot.y - pot.y) < 2) {
       ctx.fillStyle = '#5ee4cf'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
@@ -1370,7 +1506,7 @@
     requestAnimationFrame(frame);
   }
 
-  player = makePlayer(); enemies = []; obstacles = []; pots = []; particles = []; doorOpen = false; roomCleared = false;
+  player = makePlayer(); enemies = []; obstacles = []; pots = []; plants = []; particles = []; doorOpen = false; roomCleared = false;
   showTitle();
   requestAnimationFrame(frame);
 })();
