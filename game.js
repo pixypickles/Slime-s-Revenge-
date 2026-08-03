@@ -38,13 +38,14 @@
   let particles;
   let arrows;
   let plants;
+  let vines;
   let doorOpen;
   let roomCleared;
   let lastTime = performance.now();
   let shake = 0;
   let currentRoomIndex = 0;
   let gameMode = 'title';
-  const TOTAL_ROOMS = 6;
+  const TOTAL_ROOMS = 9;
   const SAVE_KEY = 'slimesRevengeSaveV2';
   const LEGACY_SAVE_KEY = 'slimesRevengeSaveV1';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
@@ -60,17 +61,21 @@
       attachedEnemy: null, attachTimer: 0, hurtTimer: 0, hiddenPot: null,
       potCharge: 0, potRolling: false, potRollX: 0, potRollY: -1,
       hp: runStats.hp, maxHp: runStats.maxHp, deathTimer: 0,
+      vineAttached: null, vineGrace: 0, vineAngle: 0, vineAngularVelocity: 0,
     };
   }
 
   function roomData(index) {
     const rooms = [
-      { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], plants:[{x:190,y:385,type:'heal'}], enemies:[[235,190,'sword']] },
-      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], enemies:[[200,180,'sword'],[745,180,'spear'],[480,170,'bow']] },
-      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
-      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'bow'],[790,160,'spear']] },
-      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], enemies:[[190,170,'sword'],[350,335,'bow'],[610,335,'spear'],[770,170,'sword']] },
-      { name: '守護隊長の間', obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], enemies:[[480,205,'boss']] },
+      { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], plants:[{x:190,y:385,type:'heal'}], vines:[], enemies:[[235,190,'sword']] },
+      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], vines:[], enemies:[[200,180,'sword'],[745,180,'spear'],[480,170,'bow']] },
+      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], vines:[], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
+      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], vines:[], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'bow'],[790,160,'spear']] },
+      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], vines:[], enemies:[[190,170,'sword'],[350,335,'bow'],[610,335,'spear'],[770,170,'sword']] },
+      { name: '吊り庭の間', obstacles: [{x:430,y:260,w:100,h:54,height:58,type:'crate'}], pots:[{x:180,y:380,mystic:true}], plants:[{x:790,y:390,type:'heal'}], vines:[{x:325,y:82,length:205},{x:635,y:82,length:205}], enemies:[[190,170,'sword'],[770,175,'bow'],[480,350,'spear']] },
+      { name: '崩れた水路', obstacles: [{x:220,y:230,w:78,h:125,height:999,type:'pillar'},{x:665,y:230,w:78,h:125,height:999,type:'pillar'},{x:430,y:345,w:100,h:55,height:58,type:'crate'}], pots:[{x:145,y:390},{x:815,y:390}], plants:[{x:480,y:160,type:'max',id:'max-room-7'}], vines:[{x:350,y:75,length:180},{x:480,y:72,length:225},{x:610,y:75,length:180}], enemies:[[165,165,'bow'],[360,330,'sword'],[600,330,'spear'],[795,165,'bow']] },
+      { name: '守護門前', obstacles: [{x:295,y:190,w:76,h:132,height:999,type:'pillar'},{x:590,y:190,w:76,h:132,height:999,type:'pillar'},{x:430,y:330,w:100,h:58,height:60,type:'crate'}], pots:[{x:175,y:365,mystic:true},{x:785,y:365},{x:480,y:405}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:380,y:72,length:215},{x:580,y:72,length:215}], enemies:[[160,160,'sword'],[320,350,'bow'],[480,190,'spear'],[640,350,'bow'],[800,160,'sword']] },
+      { name: '守護隊長の間', obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:170}], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
   }
@@ -84,6 +89,7 @@
     obstacles = data.obstacles.map(o => ({...o}));
     pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0, used:false}));
     plants = (data.plants || []).map(o => ({...o, fruitReady:false, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
+    vines = (data.vines || []).map((v, i) => ({...v, id:`vine-${currentRoomIndex}-${i}`, sway:Math.random()*Math.PI*2}));
     enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
     particles = []; arrows = []; doorOpen = false; roomCleared = false; shake = 0;
     messageEl.textContent = `第${currentRoomIndex + 1}部屋「${data.name}」— 敵を全員無力化せよ`;
@@ -290,6 +296,28 @@
       p.facingX = mx; p.facingY = my;
     }
 
+    if (!p.vineAttached && input.stick && !p.attachedEnemy && p.z < 70) tryGrabVine();
+    if (p.vineAttached) {
+      if (input.jumpPressed) {
+        releaseVine(true);
+      } else {
+        updateVineSwing(dt, mx, my, m);
+        if (input.stick) p.vineGrace = 0.34;
+        else p.vineGrace = Math.max(0, p.vineGrace - dt);
+        if (p.vineGrace <= 0) releaseVine(false);
+      }
+      if (p.vineAttached) {
+        for (const e of enemies) updateEnemy(e, dt);
+        handlePlayerEnemyInteractions();
+        updatePlants(dt);
+        updateArrows(dt);
+        updateParticles(dt);
+        checkDoorOpen();
+        clearPressed();
+        return;
+      }
+    }
+
     // 壺の中では安全に隠れる。方向入力＋ダッシュ長押しで震え、転がり始める。
     if (p.hiddenPot) {
       const pot = p.hiddenPot;
@@ -482,7 +510,7 @@
     }
 
     const wall = findStickSurface(p);
-    if (input.stick && wall && p.z > 3 && !p.attachedEnemy) {
+    if (input.stick && wall && p.z > 3 && !p.attachedEnemy && !p.vineAttached) {
       p.wallStick = 0.12;
       p.graceStick = 0.30;
       p.wallNormalX = wall.nx;
@@ -521,6 +549,80 @@
     }
 
     clearPressed();
+  }
+
+  function vineEnd(vine, angle = 0) {
+    return { x: vine.x + Math.sin(angle) * vine.length, y: vine.y + Math.cos(angle) * vine.length };
+  }
+
+  function tryGrabVine() {
+    let best = null;
+    let bestDist = 52;
+    for (const vine of vines) {
+      const end = vineEnd(vine, 0);
+      const dist = Math.hypot(player.x - end.x, player.y - end.y);
+      if (dist < bestDist) { best = vine; bestDist = dist; }
+    }
+    if (!best) return false;
+    const dx = player.x - best.x;
+    const dy = player.y - best.y;
+    player.vineAttached = best;
+    player.vineAngle = clamp(Math.atan2(dx, Math.max(12, dy)), -1.05, 1.05);
+    player.vineAngularVelocity = 0;
+    player.vineGrace = 0.34;
+    player.vz = 0;
+    player.z = 22;
+    player.dashTimer = 0;
+    player.slam = false;
+    player.dashJump = false;
+    burst(player.x, player.y, 8);
+    messageEl.textContent = 'ツタを掴んだ！ 方向入力で振り子の勢いをつけよう';
+    return true;
+  }
+
+  function updateVineSwing(dt, mx, my, magnitude) {
+    const p = player;
+    const vine = p.vineAttached;
+    if (!vine) return;
+    // 下向きを安定点にした振り子。入力の接線成分で勢いを足す。
+    const tangentX = Math.cos(p.vineAngle);
+    const tangentY = -Math.sin(p.vineAngle);
+    const inputTorque = magnitude > 0 ? (mx * tangentX + my * tangentY) * 5.8 : 0;
+    const gravityTorque = -Math.sin(p.vineAngle) * 4.2;
+    p.vineAngularVelocity += (gravityTorque + inputTorque) * dt;
+    p.vineAngularVelocity *= Math.pow(0.992, dt * 60);
+    p.vineAngularVelocity = clamp(p.vineAngularVelocity, -3.35, 3.35);
+    p.vineAngle += p.vineAngularVelocity * dt;
+    if (p.vineAngle > 1.22) { p.vineAngle = 1.22; p.vineAngularVelocity *= -0.28; }
+    if (p.vineAngle < -1.22) { p.vineAngle = -1.22; p.vineAngularVelocity *= -0.28; }
+    const end = vineEnd(vine, p.vineAngle);
+    p.x = clamp(end.x, ROOM.left + p.radius, ROOM.right - p.radius);
+    p.y = clamp(end.y, ROOM.top + p.radius, ROOM.bottom - p.radius);
+    p.z = 22 + Math.abs(Math.sin(p.vineAngle)) * 16;
+    p.vz = 0;
+    p.facingX = tangentX * Math.sign(p.vineAngularVelocity || 1);
+    p.facingY = tangentY * Math.sign(p.vineAngularVelocity || 1);
+  }
+
+  function releaseVine(jump) {
+    const p = player;
+    if (!p.vineAttached) return;
+    const tangentX = Math.cos(p.vineAngle);
+    const tangentY = -Math.sin(p.vineAngle);
+    const direction = Math.sign(p.vineAngularVelocity || 1);
+    const speed = Math.abs(p.vineAngularVelocity) * p.vineAttached.length;
+    p.vineAttached = null;
+    p.vineGrace = 0;
+    p.dashJump = true;
+    p.dashJumpX = tangentX * direction;
+    p.dashJumpY = tangentY * direction;
+    p.vz = jump ? 430 : 250;
+    p.z = Math.max(18, p.z);
+    p.x += p.dashJumpX * clamp(speed * 0.035, 5, 18);
+    p.y += p.dashJumpY * clamp(speed * 0.035, 5, 18);
+    p.airDashUsed = false;
+    burst(p.x, p.y, jump ? 13 : 7);
+    messageEl.textContent = jump ? 'ツタから勢いよく飛び出した！' : 'ツタから離れた';
   }
 
   function stunEnemy(e) {
@@ -1235,6 +1337,7 @@
 
     drawRoom();
     drawDoor();
+    for (const vine of vines) drawVine(vine);
     drawEnemySenses();
 
     for (const plant of plants) drawPlant(plant);
@@ -1342,6 +1445,40 @@
     ctx.strokeStyle = '#11151d';
     ctx.lineWidth = 4;
     ctx.strokeRect(ROOM.left, ROOM.top, ROOM.right - ROOM.left, ROOM.bottom - ROOM.top);
+  }
+
+  function drawVine(vine) {
+    const active = player.vineAttached === vine;
+    const angle = active ? player.vineAngle : Math.sin(performance.now() * 0.0014 + vine.sway) * 0.035;
+    const end = vineEnd(vine, angle);
+    ctx.save();
+    ctx.strokeStyle = '#23331f';
+    ctx.lineWidth = 9;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(vine.x, ROOM.top - 12); ctx.lineTo(vine.x, vine.y); ctx.stroke();
+    ctx.strokeStyle = active ? '#8fe36f' : '#527c3f';
+    ctx.lineWidth = active ? 8 : 7;
+    ctx.beginPath();
+    ctx.moveTo(vine.x, vine.y);
+    const segments = 12;
+    for (let i = 1; i <= segments; i++) {
+      const t = i / segments;
+      const bx = vine.x + (end.x - vine.x) * t + Math.sin(t * Math.PI * 3 + vine.sway) * 3 * (1-t);
+      const by = vine.y + (end.y - vine.y) * t;
+      ctx.lineTo(bx, by);
+    }
+    ctx.stroke();
+    for (let i = 2; i < segments; i += 3) {
+      const t = i / segments;
+      const lx = vine.x + (end.x - vine.x) * t;
+      const ly = vine.y + (end.y - vine.y) * t;
+      ctx.fillStyle = i % 2 ? '#6fae50' : '#83c85d';
+      ctx.beginPath(); ctx.ellipse(lx + (i%2?8:-8), ly, 10, 5, i%2?.6:-.6, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = active ? '#b9ff8e' : '#75b957';
+    ctx.strokeStyle = '#172115'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(end.x, end.y, 13, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.restore();
   }
 
   function drawDoor() {
@@ -1649,7 +1786,7 @@
     requestAnimationFrame(frame);
   }
 
-  player = makePlayer(); enemies = []; obstacles = []; pots = []; plants = []; particles = []; arrows = []; doorOpen = false; roomCleared = false;
+  player = makePlayer(); enemies = []; obstacles = []; pots = []; plants = []; vines = []; particles = []; arrows = []; doorOpen = false; roomCleared = false;
   showTitle();
   requestAnimationFrame(frame);
 })();
