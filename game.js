@@ -29,6 +29,7 @@
 
   let player;
   let enemies;
+  let obstacles;
   let particles;
   let doorOpen;
   let roomCleared;
@@ -60,15 +61,25 @@
       airDashUsed: false,
       wallStick: 0,
       graceStick: 0,
+      wallNormalX: 0,
+      wallNormalY: 0,
+      wallJumpTimer: 0,
+      wallJumpX: 0,
+      wallJumpY: 0,
       attachedEnemy: null,
       attachTimer: 0,
       hurtTimer: 0,
     };
 
+    obstacles = [
+      { x: 315, y: 205, w: 86, h: 112, height: 999, type: 'pillar' },
+      { x: 585, y: 175, w: 116, h: 54, height: 58, type: 'crate' },
+      { x: 510, y: 350, w: 88, h: 58, height: 58, type: 'crate' },
+    ];
     enemies = [
-      makeEnemy(250, 190),
-      makeEnemy(480, 245),
-      makeEnemy(710, 170),
+      makeEnemy(205, 180),
+      makeEnemy(500, 250),
+      makeEnemy(755, 185),
     ];
     particles = [];
     doorOpen = false;
@@ -190,6 +201,7 @@
     p.wallStick = Math.max(0, p.wallStick - dt);
     p.graceStick = Math.max(0, p.graceStick - dt);
     p.hurtTimer = Math.max(0, p.hurtTimer - dt);
+    p.wallJumpTimer = Math.max(0, p.wallJumpTimer - dt);
     shake = Math.max(0, shake - dt * 22);
 
     let mx = (input.right ? 1 : 0) - (input.left ? 1 : 0);
@@ -227,11 +239,13 @@
       p.diagonalSlam = false;
       p.z = Math.max(p.z, 1);
       if (fromWall) {
-        const cx = W / 2, cy = H / 2;
-        let dx = p.x - cx, dy = p.y - cy;
-        const len = Math.hypot(dx, dy) || 1;
-        p.x -= (dx / len) * 18;
-        p.y -= (dy / len) * 18;
+        // 接している面の反対方向へ強く跳ね返る。
+        p.wallJumpX = p.wallNormalX;
+        p.wallJumpY = p.wallNormalY;
+        p.wallJumpTimer = 0.30;
+        p.x += p.wallNormalX * 10;
+        p.y += p.wallNormalY * 10;
+        burst(p.x, p.y, 12);
       }
       p.wallStick = 0;
       p.graceStick = 0;
@@ -283,7 +297,12 @@
         }
       }
     } else {
-      if (p.dashTimer > 0) {
+      const oldX = p.x;
+      const oldY = p.y;
+      if (p.wallJumpTimer > 0) {
+        p.x += (p.wallJumpX * 470 + mx * 80) * dt;
+        p.y += (p.wallJumpY * 470 + my * 80) * dt;
+      } else if (p.dashTimer > 0) {
         p.x += p.dashX * 720 * dt;
         p.y += p.dashY * 720 * dt;
       } else if (p.slam && p.diagonalSlam) {
@@ -299,6 +318,8 @@
         p.x += mx * p.speed * airControl * dt;
         p.y += my * p.speed * airControl * dt;
       }
+
+      resolvePlayerObstacles(oldX, oldY);
 
       if (p.z > 0 || p.vz !== 0) {
         p.vz -= 590 * dt; // 弱めの重力
@@ -316,13 +337,18 @@
       }
     }
 
-    const nearWall = p.x < ROOM.left + 18 || p.x > ROOM.right - 18 || p.y < ROOM.top + 18 || p.y > ROOM.bottom - 18;
-    if (input.stick && nearWall && p.z > 0 && !p.attachedEnemy) {
+    const wall = findStickSurface(p);
+    if (input.stick && wall && p.z > 3 && !p.attachedEnemy) {
       p.wallStick = 0.12;
-      p.graceStick = 0.28;
-      p.vz = Math.max(p.vz, -25);
+      p.graceStick = 0.30;
+      p.wallNormalX = wall.nx;
+      p.wallNormalY = wall.ny;
+      p.vz = Math.max(p.vz, -18);
+      // 壁面へ軽く吸いつけ、入力が多少ずれても外れにくくする。
+      p.x += wall.nx * wall.push;
+      p.y += wall.ny * wall.push;
     } else if (!input.stick && p.wallStick > 0) {
-      p.graceStick = 0.28;
+      p.graceStick = 0.30;
       p.wallStick = 0;
     }
 
@@ -370,12 +396,74 @@
       const aim = Math.atan2(player.y - e.y, player.x - e.x);
       e.angle = aim + (Math.random() - 0.5) * 1.1;
     }
+    const oldX = e.x, oldY = e.y;
     e.x += Math.cos(e.angle) * e.speed * dt;
     e.y += Math.sin(e.angle) * e.speed * dt;
+    if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) {
+      e.x = oldX; e.y = oldY;
+      e.angle += Math.PI * (0.65 + Math.random() * 0.7);
+    }
     if (e.x < ROOM.left + 30 || e.x > ROOM.right - 30) e.angle = Math.PI - e.angle;
     if (e.y < ROOM.top + 30 || e.y > ROOM.bottom - 30) e.angle = -e.angle;
     e.x = Math.max(ROOM.left + 30, Math.min(ROOM.right - 30, e.x));
     e.y = Math.max(ROOM.top + 30, Math.min(ROOM.bottom - 30, e.y));
+  }
+
+  function circleRectHit(cx, cy, radius, rect) {
+    const qx = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
+    const qy = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
+    const dx = cx - qx, dy = cy - qy;
+    return dx * dx + dy * dy < radius * radius;
+  }
+
+  function circleHitsAnyObstacle(x, y, radius, z) {
+    return obstacles.some((o) => z < o.height && circleRectHit(x, y, radius, o));
+  }
+
+  function resolvePlayerObstacles(oldX, oldY) {
+    const p = player;
+    for (const o of obstacles) {
+      if (p.z >= o.height || !circleRectHit(p.x, p.y, p.radius, o)) continue;
+
+      // 軸ごとに戻すと、障害物の縁に沿って滑れる。
+      const hitXOnly = circleRectHit(p.x, oldY, p.radius, o);
+      const hitYOnly = circleRectHit(oldX, p.y, p.radius, o);
+      if (!hitXOnly) p.y = oldY;
+      else if (!hitYOnly) p.x = oldX;
+      else { p.x = oldX; p.y = oldY; }
+
+      if (p.dashTimer > 0) p.dashTimer = 0;
+    }
+  }
+
+  function findStickSurface(p) {
+    const gap = 15;
+    let best = null;
+    const consider = (distance, nx, ny, push = 0) => {
+      if (distance < -2 || distance > gap) return;
+      if (!best || distance < best.distance) best = { distance, nx, ny, push };
+    };
+
+    consider(p.x - p.radius - ROOM.left, 1, 0);
+    consider(ROOM.right - (p.x + p.radius), -1, 0);
+    consider(p.y - p.radius - ROOM.top, 0, 1);
+    consider(ROOM.bottom - (p.y + p.radius), 0, -1);
+
+    for (const o of obstacles) {
+      // 高さのある面だけに張りつける。低い箱でも、飛び越える高さ未満なら有効。
+      if (p.z >= o.height) continue;
+      const withinY = p.y > o.y - p.radius && p.y < o.y + o.h + p.radius;
+      const withinX = p.x > o.x - p.radius && p.x < o.x + o.w + p.radius;
+      if (withinY) {
+        consider(Math.abs((p.x + p.radius) - o.x), -1, 0);
+        consider(Math.abs(p.x - p.radius - (o.x + o.w)), 1, 0);
+      }
+      if (withinX) {
+        consider(Math.abs((p.y + p.radius) - o.y), 0, -1);
+        consider(Math.abs(p.y - p.radius - (o.y + o.h)), 0, 1);
+      }
+    }
+    return best;
   }
 
   function handlePlayerEnemyInteractions() {
@@ -449,9 +537,12 @@
     drawRoom();
     drawDoor();
 
-    const sorted = [...enemies, player].sort((a, b) => a.y - b.y);
+    const drawableObstacles = obstacles.map((o) => ({ ...o, isObstacle: true, sortY: o.y + o.h }));
+    const sorted = [...enemies, player, ...drawableObstacles].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     for (const obj of sorted) {
-      if (obj === player) drawPlayer(); else drawEnemy(obj);
+      if (obj === player) drawPlayer();
+      else if (obj.isObstacle) drawObstacle(obj);
+      else drawEnemy(obj);
     }
 
     for (const pt of particles) {
@@ -517,6 +608,41 @@
       ctx.fillStyle = '#bd8257';
       for (let x = DOOR.x + 16; x < DOOR.x + DOOR.w; x += 23) ctx.fillRect(x, ROOM.top - 12, 8, 38);
     }
+  }
+
+  function drawObstacle(o) {
+    ctx.save();
+    ctx.strokeStyle = '#0a0d12';
+    ctx.lineWidth = 7;
+    if (o.type === 'pillar') {
+      ctx.fillStyle = 'rgba(16,20,25,.24)';
+      ctx.beginPath();
+      ctx.ellipse(o.x + o.w / 2 + 8, o.y + o.h + 8, o.w * .55, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#66717a';
+      ctx.beginPath();
+      ctx.roundRect(o.x, o.y, o.w, o.h, 12);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#89959d';
+      ctx.fillRect(o.x + 13, o.y + 12, o.w - 26, 18);
+      ctx.strokeRect(o.x + 13, o.y + 12, o.w - 26, 18);
+    } else {
+      ctx.fillStyle = 'rgba(16,20,25,.22)';
+      ctx.beginPath();
+      ctx.ellipse(o.x + o.w / 2 + 7, o.y + o.h + 7, o.w * .5, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#a9643f';
+      ctx.beginPath();
+      ctx.roundRect(o.x, o.y, o.w, o.h, 7);
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#d58a55';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(o.x + 12, o.y + 10); ctx.lineTo(o.x + o.w - 12, o.y + o.h - 10);
+      ctx.moveTo(o.x + o.w - 12, o.y + 10); ctx.lineTo(o.x + 12, o.y + o.h - 10);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawPlayer() {
