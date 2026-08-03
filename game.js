@@ -39,6 +39,8 @@
   let arrows;
   let plants;
   let vines;
+  let hazards;
+  let currentRoomData;
   let doorOpen;
   let roomCleared;
   let lastTime = performance.now();
@@ -67,15 +69,15 @@
 
   function roomData(index) {
     const rooms = [
-      { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], plants:[{x:190,y:385,type:'heal'}], vines:[], enemies:[[235,190,'sword']] },
-      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], vines:[], enemies:[[200,180,'sword'],[745,180,'spear'],[480,170,'bow']] },
-      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], vines:[], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
-      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], vines:[], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'bow'],[790,160,'spear']] },
-      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], vines:[], enemies:[[190,170,'sword'],[350,335,'bow'],[610,335,'spear'],[770,170,'sword']] },
-      { name: '吊り庭の間', obstacles: [{x:430,y:260,w:100,h:54,height:58,type:'crate'}], pots:[{x:180,y:380,mystic:true}], plants:[{x:790,y:390,type:'heal'}], vines:[{x:325,y:82,length:205},{x:635,y:82,length:205}], enemies:[[190,170,'sword'],[770,175,'bow'],[480,350,'spear']] },
-      { name: '崩れた水路', obstacles: [{x:220,y:230,w:78,h:125,height:999,type:'pillar'},{x:665,y:230,w:78,h:125,height:999,type:'pillar'},{x:430,y:345,w:100,h:55,height:58,type:'crate'}], pots:[{x:145,y:390},{x:815,y:390}], plants:[{x:480,y:160,type:'max',id:'max-room-7'}], vines:[{x:350,y:75,length:180},{x:480,y:72,length:225},{x:610,y:75,length:180}], enemies:[[165,165,'bow'],[360,330,'sword'],[600,330,'spear'],[795,165,'bow']] },
-      { name: '守護門前', obstacles: [{x:295,y:190,w:76,h:132,height:999,type:'pillar'},{x:590,y:190,w:76,h:132,height:999,type:'pillar'},{x:430,y:330,w:100,h:58,height:60,type:'crate'}], pots:[{x:175,y:365,mystic:true},{x:785,y:365},{x:480,y:405}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:380,y:72,length:215},{x:580,y:72,length:215}], enemies:[[160,160,'sword'],[320,350,'bow'],[480,190,'spear'],[640,350,'bow'],[800,160,'sword']] },
-      { name: '守護隊長の間', obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:170}], enemies:[[480,205,'boss']] },
+      { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], plants:[{x:190,y:385,type:'heal'}], vines:[], hazards:[], enemies:[[235,190,'sword']] },
+      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], vines:[], hazards:[], enemies:[[200,180,'sword'],[745,180,'spear'],[480,170,'bow']] },
+      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], vines:[], hazards:[], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
+      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], vines:[], hazards:[], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'bow'],[790,160,'spear']] },
+      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], vines:[], hazards:[], enemies:[[190,170,'sword'],[350,335,'bow'],[610,335,'spear'],[770,170,'sword']] },
+      { name: '吊り庭の間', obstacles: [{x:430,y:260,w:100,h:54,height:58,type:'crate'}], pots:[{x:180,y:380,mystic:true}], plants:[{x:790,y:390,type:'heal'}], vines:[{x:305,y:82,length:150},{x:635,y:82,length:245}], hazards:[], enemies:[[190,170,'sword'],[770,175,'bow'],[480,350,'spear']] },
+      { name: '棘床の水路', obstacles: [{x:210,y:175,w:72,h:118,height:999,type:'pillar'},{x:678,y:175,w:72,h:118,height:999,type:'pillar'}], pots:[{x:145,y:405},{x:815,y:405,mystic:true}], plants:[{x:790,y:150,type:'max',id:'max-room-7'}], vines:[{x:480,y:76,length:285},{x:305,y:72,length:175},{x:655,y:72,length:215}], hazards:[{x:315,y:205,w:330,h:175,type:'spikes'}], enemies:[[165,150,'bow'],[795,150,'bow'],[480,170,'spear']] },
+      { name: '守護門前', obstacles: [{x:295,y:190,w:76,h:132,height:999,type:'pillar'},{x:590,y:190,w:76,h:132,height:999,type:'pillar'},{x:430,y:330,w:100,h:58,height:60,type:'crate'}], pots:[{x:175,y:365,mystic:true},{x:785,y:365},{x:480,y:405}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:350,y:72,length:185},{x:580,y:72,length:265}], hazards:[{x:405,y:205,w:150,h:105,type:'spikes'}], enemies:[[160,160,'sword'],[320,350,'bow'],[480,190,'spear'],[640,350,'bow'],[800,160,'sword']] },
+      { name: '守護隊長の間', finalBoss:true, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
   }
@@ -83,6 +85,7 @@
   function loadRoom(index, save = true) {
     currentRoomIndex = clamp(index, 0, TOTAL_ROOMS - 1);
     const data = roomData(currentRoomIndex);
+    currentRoomData = data;
     player = makePlayer();
     player.hp = clamp(runStats.hp, 1, runStats.maxHp);
     player.maxHp = runStats.maxHp;
@@ -90,6 +93,7 @@
     pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0, used:false}));
     plants = (data.plants || []).map(o => ({...o, fruitReady:false, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
     vines = (data.vines || []).map((v, i) => ({...v, id:`vine-${currentRoomIndex}-${i}`, sway:Math.random()*Math.PI*2}));
+    hazards = (data.hazards || []).map(h => ({...h, pulse:Math.random()*Math.PI*2}));
     enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
     particles = []; arrows = []; doorOpen = false; roomCleared = false; shake = 0;
     messageEl.textContent = `第${currentRoomIndex + 1}部屋「${data.name}」— 敵を全員無力化せよ`;
@@ -531,16 +535,26 @@
     handlePlayerEnemyInteractions();
     updatePlants(dt);
     updateArrows(dt);
+    updateHazards(dt);
 
     updateParticles(dt);
 
     checkDoorOpen();
     if (doorOpen && !roomCleared && p.y < ROOM.top + 34 && p.x > DOOR.x && p.x < DOOR.x + DOOR.w) {
       roomCleared = true; burst(p.x, p.y, 28);
-      if (currentRoomIndex < TOTAL_ROOMS - 1) {
-        messageEl.textContent = '次の部屋へ…';
-        runStats.hp = p.hp; runStats.maxHp = p.maxHp;
-        loadRoom(currentRoomIndex + 1);
+      // 最終クリアは部屋番号ではなく、部屋データの finalBoss フラグで判定する。
+      // 部屋を追加・並べ替えしても途中終了しない。
+      if (!currentRoomData?.finalBoss) {
+        const nextRoom = currentRoomIndex + 1;
+        if (nextRoom < TOTAL_ROOMS) {
+          messageEl.textContent = '次の部屋へ…';
+          runStats.hp = p.hp; runStats.maxHp = p.maxHp;
+          loadRoom(nextRoom);
+        } else {
+          // データ不整合時も誤ってクリアにせず、進行不能の原因を画面へ示す。
+          roomCleared = false;
+          messageEl.textContent = '次の部屋データが見つかりません。進行状態を保持しました';
+        }
       } else {
         gameMode = 'complete';
         messageEl.textContent = '守護隊長を倒した！ Slime’s Revenge クリア！';
@@ -1324,6 +1338,27 @@
     }
   }
 
+  function updateHazards(dt) {
+    if (!hazards?.length || player.deathTimer > 0 || player.hiddenPot || player.vineAttached) return;
+    for (const hazard of hazards) {
+      hazard.pulse += dt * 2.4;
+      if (hazard.type !== 'spikes') continue;
+      // 高く跳んでいれば棘床を越えられる。通常ジャンプ、ダッシュジャンプ、ツタの全てが解法になる。
+      if (player.z >= 34 || player.invuln > 0) continue;
+      if (circleRectHit(player.x, player.y, player.radius * 0.72, hazard)) {
+        damagePlayer(1, 'トゲ床！ HPが1減った');
+        const cx = hazard.x + hazard.w / 2;
+        const cy = hazard.y + hazard.h / 2;
+        let dx = player.x - cx, dy = player.y - cy;
+        const len = Math.hypot(dx, dy) || 1;
+        player.x += dx / len * 24;
+        player.y += dy / len * 24;
+        player.vz = Math.max(player.vz, 250);
+        break;
+      }
+    }
+  }
+
   function clearPressed() {
     input.dashPressed = false;
     input.jumpPressed = false;
@@ -1337,6 +1372,7 @@
 
     drawRoom();
     drawDoor();
+    for (const hazard of hazards) drawHazard(hazard);
     for (const vine of vines) drawVine(vine);
     drawEnemySenses();
 
@@ -1445,6 +1481,33 @@
     ctx.strokeStyle = '#11151d';
     ctx.lineWidth = 4;
     ctx.strokeRect(ROOM.left, ROOM.top, ROOM.right - ROOM.left, ROOM.bottom - ROOM.top);
+  }
+
+  function drawHazard(hazard) {
+    if (hazard.type !== 'spikes') return;
+    ctx.save();
+    ctx.fillStyle = '#5f5848';
+    ctx.fillRect(hazard.x, hazard.y, hazard.w, hazard.h);
+    ctx.strokeStyle = '#302d28';
+    ctx.lineWidth = 2;
+    const step = 25;
+    for (let y = hazard.y + 5; y < hazard.y + hazard.h - 4; y += step) {
+      for (let x = hazard.x + 5; x < hazard.x + hazard.w - 4; x += step) {
+        const offset = ((Math.floor((y-hazard.y)/step) & 1) ? step * 0.5 : 0);
+        const sx = x + offset;
+        if (sx > hazard.x + hazard.w - 6) continue;
+        const pulse = 1 + Math.sin(hazard.pulse + x * 0.03 + y * 0.02) * 0.06;
+        ctx.beginPath();
+        ctx.moveTo(sx - 8, y + 13);
+        ctx.lineTo(sx, y + 13 - 18 * pulse);
+        ctx.lineTo(sx + 8, y + 13);
+        ctx.closePath();
+        ctx.fillStyle = '#c4b999';
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 
   function drawVine(vine) {
@@ -1786,7 +1849,7 @@
     requestAnimationFrame(frame);
   }
 
-  player = makePlayer(); enemies = []; obstacles = []; pots = []; plants = []; vines = []; particles = []; arrows = []; doorOpen = false; roomCleared = false;
+  player = makePlayer(); enemies = []; obstacles = []; pots = []; plants = []; vines = []; hazards = []; particles = []; arrows = []; doorOpen = false; roomCleared = false; currentRoomData = null;
   showTitle();
   requestAnimationFrame(frame);
 })();
