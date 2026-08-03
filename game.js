@@ -51,6 +51,13 @@
       dashY: -1,
       invuln: 0,
       slam: false,
+      diagonalSlam: false,
+      slamX: 0,
+      slamY: -1,
+      dashJump: false,
+      dashJumpX: 0,
+      dashJumpY: -1,
+      airDashUsed: false,
       wallStick: 0,
       graceStick: 0,
       attachedEnemy: null,
@@ -197,10 +204,29 @@
       p.attachedEnemy = null;
       p.attachTimer = 0;
       p.vz = 370;
+      p.airDashUsed = false;
     } else if (input.jumpPressed && (p.z <= 0.01 || p.wallStick > 0 || p.graceStick > 0)) {
-      p.vz = p.wallStick > 0 || p.graceStick > 0 ? 410 : 370;
+      const fromWall = p.wallStick > 0 || p.graceStick > 0;
+      const fromDash = p.dashTimer > 0 && !fromWall;
+
+      if (fromDash) {
+        // ダッシュの勢いをジャンプへ変換。通常より高く、遠くまで飛ぶ。
+        p.vz = 475;
+        p.dashJump = true;
+        p.dashJumpX = p.dashX;
+        p.dashJumpY = p.dashY;
+        p.dashTimer = 0;
+        p.invuln = Math.max(p.invuln, 0.12);
+        burst(p.x, p.y, 12);
+      } else {
+        p.vz = fromWall ? 410 : 370;
+        p.dashJump = false;
+      }
+
+      p.airDashUsed = false;
+      p.diagonalSlam = false;
       p.z = Math.max(p.z, 1);
-      if (p.wallStick > 0 || p.graceStick > 0) {
+      if (fromWall) {
         const cx = W / 2, cy = H / 2;
         let dx = p.x - cx, dy = p.y - cy;
         const len = Math.hypot(dx, dy) || 1;
@@ -211,16 +237,24 @@
       p.graceStick = 0;
     }
 
-    if (input.dashPressed && p.dashCooldown <= 0 && !p.attachedEnemy) {
-      if (p.z > 8) {
+    if (input.dashPressed && !p.attachedEnemy) {
+      if (p.z > 8 && !p.airDashUsed) {
         p.slam = true;
-        p.vz = -760;
-      } else {
+        p.airDashUsed = true;
+        p.diagonalSlam = p.dashJump;
+        p.slamX = p.dashJump ? p.dashJumpX : (m > 0 ? mx : p.facingX);
+        p.slamY = p.dashJump ? p.dashJumpY : (m > 0 ? my : p.facingY);
+        p.vz = p.diagonalSlam ? -650 : -760;
+        p.invuln = Math.max(p.invuln, 0.18);
+        burst(p.x, p.y, p.diagonalSlam ? 14 : 9);
+      } else if (p.z <= 8 && p.dashCooldown <= 0) {
         p.dashTimer = 0.23;
         p.dashCooldown = 0.42;
         p.invuln = 0.28;
         p.dashX = m > 0 ? mx : p.facingX;
         p.dashY = m > 0 ? my : p.facingY;
+        p.dashJump = false;
+        p.airDashUsed = false;
         burst(p.x, p.y, 8);
       }
     }
@@ -252,6 +286,14 @@
       if (p.dashTimer > 0) {
         p.x += p.dashX * 720 * dt;
         p.y += p.dashY * 720 * dt;
+      } else if (p.slam && p.diagonalSlam) {
+        // ダッシュジャンプからの急降下は、進行方向へ斜めに突っ込む。
+        p.x += p.slamX * 520 * dt;
+        p.y += p.slamY * 520 * dt;
+      } else if (p.dashJump && p.z > 0) {
+        // 慣性を残しつつ、スティックでも少し軌道修正できる。
+        p.x += (p.dashJumpX * 390 + mx * 95) * dt;
+        p.y += (p.dashJumpY * 390 + my * 95) * dt;
       } else {
         const airControl = p.z > 0 ? 0.88 : 1;
         p.x += mx * p.speed * airControl * dt;
@@ -266,6 +308,9 @@
           p.z = 0;
           p.vz = 0;
           p.slam = false;
+          p.diagonalSlam = false;
+          p.dashJump = false;
+          p.airDashUsed = false;
           if (impact) slamImpact();
         }
       }
@@ -488,9 +533,10 @@
 
     ctx.save();
     ctx.translate(p.x, p.y - p.z);
+    if (p.slam && p.diagonalSlam) ctx.rotate(Math.atan2(p.slamY, p.slamX) + Math.PI / 2);
     let sx = 1, sy = 1;
     if (p.dashTimer > 0) { sx = 1.55; sy = 0.58; }
-    if (p.slam) { sx = 0.82; sy = 1.22; }
+    if (p.slam) { sx = p.diagonalSlam ? 1.28 : 0.82; sy = p.diagonalSlam ? 0.72 : 1.22; }
     if (p.wallStick > 0 || p.graceStick > 0) { sx = 1.25; sy = 0.78; }
     ctx.scale(sx, sy);
     ctx.fillStyle = p.hurtTimer > 0 ? '#ff7791' : '#5ee4cf';
