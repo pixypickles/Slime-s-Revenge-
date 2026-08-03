@@ -71,6 +71,10 @@
       attachTimer: 0,
       hurtTimer: 0,
       hiddenPot: null,
+      potCharge: 0,
+      potRolling: false,
+      potRollX: 0,
+      potRollY: -1,
     };
 
     obstacles = [
@@ -79,8 +83,8 @@
       { x: 510, y: 350, w: 88, h: 58, height: 58, type: 'crate' },
     ];
     pots = [
-      { x: 235, y: 355, radius: 28, broken: false },
-      { x: 745, y: 330, radius: 28, broken: false },
+      { x: 235, y: 355, radius: 28, broken: false, shake: 0, rolling: false, rollSpeed: 0 },
+      { x: 745, y: 330, radius: 28, broken: false, shake: 0, rolling: false, rollSpeed: 0 },
     ];
     enemies = [
       makeEnemy(205, 180, 'sword'),
@@ -224,27 +228,44 @@
       p.facingX = mx; p.facingY = my;
     }
 
-    // 壺の中では安全に隠れる。ジャンプで上へ飛び出す。
+    // 壺の中では安全に隠れる。方向入力＋ダッシュ長押しで震え、転がり始める。
     if (p.hiddenPot) {
-      p.x = p.hiddenPot.x;
-      p.y = p.hiddenPot.y + 4;
+      const pot = p.hiddenPot;
+      p.x = pot.x;
+      p.y = pot.y + 4;
       p.z = 0;
       p.vz = 0;
       p.dashTimer = 0;
       p.slam = false;
+
       if (input.jumpPressed) {
-        const pot = p.hiddenPot;
-        p.hiddenPot = null;
-        p.z = 20;
-        p.vz = 390;
-        p.airDashUsed = false;
-        p.x += p.facingX * 12;
-        p.y += p.facingY * 12;
-        burst(pot.x, pot.y, 10);
-        messageEl.textContent = '壺から飛び出した！';
+        exitPot(pot, false);
+      } else {
+        if (!p.potRolling && input.dash && m > 0) {
+          p.potCharge += dt;
+          pot.shake = Math.min(1, p.potCharge / 0.38);
+          p.potRollX = mx;
+          p.potRollY = my;
+          if (p.potCharge >= 0.38) {
+            p.potRolling = true;
+            pot.rolling = true;
+            pot.rollSpeed = 455;
+            pot.shake = 0;
+            shake = Math.max(shake, 3);
+            burst(pot.x, pot.y, 8);
+            messageEl.textContent = '壺が転がり出した！ 最初の衝突で割れます';
+          }
+        } else if (!p.potRolling) {
+          p.potCharge = Math.max(0, p.potCharge - dt * 2.5);
+          pot.shake = p.potCharge > 0 ? Math.min(1, p.potCharge / 0.38) : 0;
+        }
+
+        if (p.potRolling) updateRollingPot(pot, dt);
       }
+
       for (const e of enemies) updateEnemy(e, dt);
       updateParticles(dt);
+      checkDoorOpen();
       clearPressed();
       return;
     }
@@ -413,10 +434,7 @@
 
     updateParticles(dt);
 
-    if (!doorOpen && enemies.every((e) => e.state === 'stunned')) {
-      doorOpen = true;
-      messageEl.textContent = '扉が開いた！ 上の出口へ！';
-    }
+    checkDoorOpen();
     if (doorOpen && !roomCleared && p.y < ROOM.top + 34 && p.x > DOOR.x && p.x < DOOR.x + DOOR.w) {
       roomCleared = true;
       messageEl.textContent = '試作クリア！';
@@ -426,11 +444,145 @@
     clearPressed();
   }
 
+  function checkDoorOpen() {
+    if (!doorOpen && enemies.every((e) => e.state === 'stunned')) {
+      doorOpen = true;
+      messageEl.textContent = '扉が開いた！ 上の出口へ！';
+    }
+  }
+
+  function exitPot(pot, broken, launchX = player.facingX, launchY = player.facingY) {
+    player.hiddenPot = null;
+    player.potCharge = 0;
+    player.potRolling = false;
+    player.z = 20;
+    player.vz = broken ? 440 : 390;
+    player.airDashUsed = false;
+    player.dashJump = false;
+    const len = Math.hypot(launchX, launchY) || 1;
+    player.x = pot.x + launchX / len * (broken ? 30 : 12);
+    player.y = pot.y + launchY / len * (broken ? 30 : 12);
+    pot.rolling = false;
+    pot.rollSpeed = 0;
+    pot.shake = 0;
+    burst(pot.x, pot.y, broken ? 22 : 10);
+    messageEl.textContent = broken ? '壺が割れ、スライムが勢いよく飛び出した！' : '壺から飛び出した！';
+  }
+
+  function breakPot(pot, cause, hitEnemy = null) {
+    if (pot.broken) return;
+    pot.broken = true;
+    pot.rolling = false;
+    pot.rollSpeed = 0;
+    shake = Math.max(shake, 9);
+
+    if (hitEnemy) {
+      if (hitEnemy.weapon === 'spear') {
+        hitEnemy.hp = 0;
+        hitEnemy.state = 'stunned';
+        hitEnemy.stateTimer = 999;
+        hitEnemy.attackState = 'idle';
+        messageEl.textContent = '壺が槍兵を直撃！ 槍兵を気絶させた！';
+      } else {
+        hitEnemy.attackState = 'recover';
+        hitEnemy.attackTimer = 0.35;
+        messageEl.textContent = '剣兵に壺を斬り割られた！';
+      }
+    } else if (cause === 'sword') {
+      messageEl.textContent = '剣兵に壺を斬り割られた！';
+    }
+
+    exitPot(pot, true, -player.potRollX || 0, -player.potRollY || -1);
+    if (hitEnemy?.weapon === 'spear') messageEl.textContent = '壺が槍兵を直撃！ 槍兵を気絶させた！';
+    else if (cause === 'sword' || hitEnemy?.weapon === 'sword') messageEl.textContent = '剣兵に壺を斬り割られた！ スライムが飛び出した！';
+    checkDoorOpen();
+  }
+
+  function updateRollingPot(pot, dt) {
+    const p = player;
+    const oldX = pot.x;
+    const oldY = pot.y;
+    pot.x += p.potRollX * pot.rollSpeed * dt;
+    pot.y += p.potRollY * pot.rollSpeed * dt;
+    pot.rollSpeed = Math.min(560, pot.rollSpeed + 70 * dt);
+
+    const wallHit = pot.x - pot.radius <= ROOM.left || pot.x + pot.radius >= ROOM.right ||
+      pot.y - pot.radius <= ROOM.top || pot.y + pot.radius >= ROOM.bottom;
+    const obstacleHit = circleHitsAnyObstacle(pot.x, pot.y, pot.radius, 0);
+    if (wallHit || obstacleHit) {
+      pot.x = oldX; pot.y = oldY;
+      p.x = pot.x; p.y = pot.y + 4;
+      breakPot(pot, wallHit ? 'wall' : 'obstacle');
+      return;
+    }
+
+    for (const e of enemies) {
+      if (e.state === 'stunned') continue;
+      if (Math.hypot(pot.x - e.x, pot.y - e.y) < pot.radius + e.radius - 2) {
+        breakPot(pot, 'enemy', e);
+        return;
+      }
+    }
+
+    p.x = pot.x;
+    p.y = pot.y + 4;
+  }
+
+  function trySwordBreakPot(e) {
+    if (e.attackHit || !player.hiddenPot || !player.potRolling) return;
+    const pot = player.hiddenPot;
+    const dx = pot.x - e.x;
+    const dy = pot.y - e.y;
+    const dist = Math.hypot(dx, dy);
+    const angleToPot = Math.atan2(dy, dx);
+    const angleDiff = Math.atan2(Math.sin(angleToPot - e.attackAngle), Math.cos(angleToPot - e.attackAngle));
+    if (dist < 92 && Math.abs(angleDiff) < 1.05) {
+      e.attackHit = true;
+      breakPot(pot, 'sword', e);
+    }
+  }
+
   function updateEnemy(e, dt) {
     e.faceCooldown = Math.max(0, e.faceCooldown - dt);
     if (e.state === 'stunned') return;
     if (player.attachedEnemy === e) return;
     if (player.hiddenPot) {
+      const pot = player.hiddenPot;
+      // 静止中は完全に見失う。転がる壺だけは剣兵が危険物として迎撃する。
+      if (player.potRolling && e.weapon === 'sword') {
+        const dx = pot.x - e.x;
+        const dy = pot.y - e.y;
+        const dist = Math.hypot(dx, dy);
+        if (e.attackState !== 'idle') {
+          e.attackTimer -= dt;
+          if (e.attackState === 'windup') {
+            e.attackAngle = Math.atan2(dy, dx);
+            if (e.attackTimer <= 0) {
+              e.attackState = 'active';
+              e.attackTimer = 0.22;
+              e.attackHit = false;
+            }
+          } else if (e.attackState === 'active') {
+            trySwordBreakPot(e);
+            if (e.attackTimer <= 0) { e.attackState = 'recover'; e.attackTimer = 0.42; }
+          } else if (e.attackState === 'recover' && e.attackTimer <= 0) {
+            e.attackState = 'idle'; e.attackTimer = 0.35;
+          }
+          return;
+        }
+        e.attackTimer -= dt;
+        if (dist < 92 && e.attackTimer <= 0) {
+          e.attackState = 'windup'; e.attackTimer = 0.34; e.attackAngle = Math.atan2(dy, dx);
+          return;
+        }
+        e.angle = Math.atan2(dy, dx);
+        const oldX = e.x, oldY = e.y;
+        e.x += Math.cos(e.angle) * e.speed * 0.9 * dt;
+        e.y += Math.sin(e.angle) * e.speed * 0.9 * dt;
+        if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) { e.x = oldX; e.y = oldY; }
+        return;
+      }
+
       e.attackState = 'idle';
       e.attackTimer = Math.max(e.attackTimer, 0.4);
       e.stateTimer -= dt;
@@ -819,7 +971,9 @@
 
   function drawPot(pot) {
     ctx.save();
-    ctx.translate(pot.x, pot.y);
+    const potWobble = pot.shake > 0 ? Math.sin(performance.now() * 0.055) * pot.shake * 5 : 0;
+    ctx.translate(pot.x + potWobble, pot.y);
+    if (pot.rolling) ctx.rotate(performance.now() * 0.018 * (player.potRollX >= 0 ? 1 : -1));
     ctx.fillStyle = 'rgba(16,20,25,.25)';
     ctx.beginPath(); ctx.ellipse(7, 17, 31, 12, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 7;
