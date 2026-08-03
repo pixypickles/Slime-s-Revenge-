@@ -117,8 +117,61 @@
     button.addEventListener('pointerdown', press);
     button.addEventListener('pointerup', release);
     button.addEventListener('pointercancel', release);
-    button.addEventListener('pointerleave', (e) => { if (e.buttons === 0) release(e); });
+    button.addEventListener('lostpointercapture', release);
   });
+
+  // 円形アナログスティック。斜め入力にも対応します。
+  const joystick = document.getElementById('joystick');
+  const stickKnob = document.getElementById('stickKnob');
+  let joystickPointer = null;
+
+  function updateJoystick(e) {
+    const rect = joystick.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const max = rect.width * 0.29;
+    let dx = e.clientX - cx;
+    let dy = e.clientY - cy;
+    const length = Math.hypot(dx, dy);
+    if (length > max) {
+      dx = dx / length * max;
+      dy = dy / length * max;
+    }
+    stickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+    const nx = dx / max;
+    const ny = dy / max;
+    const dead = 0.24;
+    setInput('left', nx < -dead);
+    setInput('right', nx > dead);
+    setInput('up', ny < -dead);
+    setInput('down', ny > dead);
+  }
+
+  function releaseJoystick(e) {
+    if (joystickPointer !== null && e?.pointerId !== undefined && e.pointerId !== joystickPointer) return;
+    joystickPointer = null;
+    joystick.classList.remove('active');
+    stickKnob.style.transform = 'translate(0px, 0px)';
+    setInput('left', false);
+    setInput('right', false);
+    setInput('up', false);
+    setInput('down', false);
+  }
+
+  joystick.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    joystickPointer = e.pointerId;
+    joystick.setPointerCapture?.(e.pointerId);
+    joystick.classList.add('active');
+    updateJoystick(e);
+  });
+  joystick.addEventListener('pointermove', (e) => {
+    if (e.pointerId === joystickPointer) updateJoystick(e);
+  });
+  joystick.addEventListener('pointerup', releaseJoystick);
+  joystick.addEventListener('pointercancel', releaseJoystick);
+  joystick.addEventListener('lostpointercapture', releaseJoystick);
 
   resetBtn.addEventListener('click', resetGame);
 

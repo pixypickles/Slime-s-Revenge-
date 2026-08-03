@@ -3,16 +3,39 @@
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #11151d;
   touch-action: none;
+  --safe-bottom: max(10px, env(safe-area-inset-bottom));
+  --safe-left: max(10px, env(safe-area-inset-left));
+  --safe-right: max(10px, env(safe-area-inset-right));
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; overflow: hidden; background: #11151d; }
-body { display: grid; place-items: center; }
-button { font: inherit; color: white; border: 3px solid #0b0d12; user-select: none; -webkit-user-select: none; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #11151d; }
+body { overscroll-behavior: none; }
+button { font: inherit; color: white; border: 3px solid #080b11; user-select: none; -webkit-user-select: none; }
 
 #gameWrap {
+  width: 100%;
+  height: 100dvh;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #11151d;
+}
+
+#stageArea {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: start center;
+  background: #11151d;
+  overflow: hidden;
+}
+
+#stageFrame {
   position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
+  width: min(100%, calc((100dvh - 190px) * 16 / 9));
+  max-height: 100%;
   aspect-ratio: 16 / 9;
   background: #202735;
   overflow: hidden;
@@ -37,51 +60,132 @@ button { font: inherit; color: white; border: 3px solid #0b0d12; user-select: no
 }
 
 #message {
+  min-width: 0;
   padding: 8px 12px;
-  border: 3px solid #0b0d12;
+  border: 3px solid #080b11;
   border-radius: 12px;
-  background: rgba(25, 31, 43, 0.88);
-  font-weight: 800;
+  background: rgba(25, 31, 43, 0.9);
+  font-weight: 850;
   text-shadow: 0 2px #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #resetBtn {
+  flex: 0 0 auto;
   pointer-events: auto;
   padding: 8px 12px;
   border-radius: 12px;
-  background: #54627c;
+  background: #60708e;
+  box-shadow: 0 4px 0 #080b11;
 }
 
-#mobileControls { position: absolute; inset: 0; pointer-events: none; }
-.dpad, .actions { position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); pointer-events: auto; }
-.dpad { left: max(14px, env(safe-area-inset-left)); width: 176px; height: 176px; }
-.actions { right: max(14px, env(safe-area-inset-right)); width: 250px; height: 170px; }
-
-.pad, .action {
-  position: absolute;
-  background: rgba(75, 87, 111, 0.82);
-  box-shadow: 0 5px 0 #0b0d12;
-  font-weight: 900;
+#controlDeck {
+  flex: 0 0 190px;
+  width: 100%;
+  min-height: 148px;
+  padding: 9px var(--safe-right) var(--safe-bottom) var(--safe-left);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 4px solid #080b11;
+  background: #171e2a;
   touch-action: none;
 }
-.pad:active, .action:active, .pressed { transform: translateY(3px); box-shadow: 0 2px 0 #0b0d12; filter: brightness(1.25); }
-.pad { width: 62px; height: 62px; border-radius: 18px; font-size: 24px; }
-.pad.up { left: 57px; top: 0; }
-.pad.down { left: 57px; bottom: 0; }
-.pad.left { left: 0; top: 57px; }
-.pad.right { right: 0; top: 57px; }
-.action { width: 86px; height: 70px; border-radius: 50%; font-size: 15px; }
-.action.dash { left: 0; bottom: 0; background: rgba(57, 153, 222, 0.88); }
-.action.jump { right: 0; top: 0; background: rgba(236, 159, 55, 0.9); }
-.action.stick { right: 0; bottom: 0; background: rgba(187, 79, 188, 0.9); }
 
-@media (pointer: fine) and (min-width: 900px) {
-  #mobileControls { opacity: 0.55; }
+#joystick {
+  position: relative;
+  flex: 0 0 150px;
+  width: 150px;
+  height: 150px;
+  margin-left: clamp(0px, 3vw, 34px);
+  border: 5px solid #080b11;
+  border-radius: 50%;
+  background: radial-gradient(circle, #43516a 0 34%, #303b50 35% 66%, #222b3b 67%);
+  box-shadow: inset 0 0 0 4px rgba(255,255,255,.08), 0 6px 0 #080b11;
+  touch-action: none;
+  user-select: none;
 }
 
-@media (max-width: 700px) {
-  #message { max-width: 62%; font-size: 12px; }
+.stick-guide {
+  position: absolute;
+  inset: 22px;
+  border: 3px solid rgba(255,255,255,.13);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+#stickKnob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 70px;
+  height: 70px;
+  translate: -50% -50%;
+  border: 5px solid #080b11;
+  border-radius: 50%;
+  background: linear-gradient(#7385a3, #52627e);
+  box-shadow: 0 5px 0 #080b11, inset 0 5px 8px rgba(255,255,255,.16);
+  pointer-events: none;
+  will-change: transform;
+}
+
+#joystick.active #stickKnob { filter: brightness(1.14); }
+
+.actions {
+  flex: 0 1 390px;
+  height: 158px;
+  margin-right: clamp(0px, 2vw, 28px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(82px, 116px));
+  align-items: end;
+  justify-content: end;
+  gap: clamp(8px, 2vw, 22px);
+}
+
+.action {
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 116px;
+  border-radius: 50%;
+  box-shadow: 0 7px 0 #080b11;
+  font-weight: 900;
+  font-size: clamp(14px, 2.4vw, 20px);
+  touch-action: none;
+}
+.action:active, .action.pressed { transform: translateY(4px); box-shadow: 0 3px 0 #080b11; filter: brightness(1.2); }
+.action.dash { background: #159ed8; }
+.action.jump { align-self: start; background: #f2a014; }
+.action.stick { background: #b945bd; }
+
+/* 細長い折りたたみ・通常の縦持ちスマホ */
+@media (max-aspect-ratio: 3 / 4) {
+  #stageFrame { width: 100%; max-height: none; }
+  #controlDeck { flex-basis: 210px; }
+  #joystick { flex-basis: 138px; width: 138px; height: 138px; margin-left: 0; }
+  #stickKnob { width: 64px; height: 64px; }
+  .actions { flex: 1 1 auto; height: 176px; grid-template-columns: repeat(2, minmax(76px, 104px)); grid-template-rows: 1fr 1fr; gap: 8px 12px; margin-right: 0; }
+  .action { max-height: 94px; justify-self: end; }
+  .action.jump { grid-column: 2; grid-row: 1; }
+  .action.dash { grid-column: 1; grid-row: 2; }
+  .action.stick { grid-column: 2; grid-row: 2; }
+  #message { max-width: 66%; font-size: 12px; }
   #resetBtn { font-size: 12px; }
-  .dpad { transform: scale(.82); transform-origin: bottom left; }
-  .actions { transform: scale(.82); transform-origin: bottom right; }
+}
+
+/* 高さの低い横長画面では操作帯を薄くする */
+@media (orientation: landscape) and (max-height: 620px) {
+  #controlDeck { flex-basis: 132px; min-height: 120px; padding-top: 5px; }
+  #stageFrame { width: min(100%, calc((100dvh - 132px) * 16 / 9)); }
+  #joystick { flex-basis: 112px; width: 112px; height: 112px; border-width: 4px; }
+  #stickKnob { width: 54px; height: 54px; border-width: 4px; }
+  .stick-guide { inset: 16px; }
+  .actions { height: 112px; grid-template-columns: repeat(3, minmax(72px, 94px)); }
+  .action { max-height: 92px; font-size: 14px; }
+}
+
+@media (pointer: fine) and (min-width: 1000px) {
+  #controlDeck { opacity: .9; }
 }
