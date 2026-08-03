@@ -98,11 +98,12 @@
   }
 
   function makeEnemy(x, y, weapon = 'sword') {
+    const patrolRadius = weapon === 'spear' ? 115 : 145;
     return {
       x, y,
       radius: 25,
       hp: 2,
-      state: 'walk', // walk, tripped, stunned
+      state: 'walk', // walk, tripped, stunned（既存戦闘状態）
       stateTimer: 0,
       angle: Math.random() * Math.PI * 2,
       speed: 58 + Math.random() * 18,
@@ -113,7 +114,31 @@
       attackAngle: 0,
       attackHit: false,
       strugglePhase: Math.random() * Math.PI * 2,
+
+      // v0.9 敵AI。戦闘状態とは分離し、既存の転倒・気絶処理を維持する。
+      aiState: 'patrol', // patrol, chase, search, investigatePot
+      visionRange: weapon === 'spear' ? 300 : 270,
+      visionHalfAngle: weapon === 'spear' ? 0.62 : 0.78,
+      alert: 0,
+      lostSightTimer: 0,
+      searchTimer: 0,
+      lastSeenX: x,
+      lastSeenY: y,
+      targetPot: null,
+      inspectTimer: 0,
+      patrolIndex: 0,
+      patrolWait: Math.random() * 0.8,
+      patrolPoints: [
+        { x: clamp(x - patrolRadius, ROOM.left + 38, ROOM.right - 38), y: clamp(y - patrolRadius * 0.45, ROOM.top + 38, ROOM.bottom - 38) },
+        { x: clamp(x + patrolRadius, ROOM.left + 38, ROOM.right - 38), y: clamp(y - patrolRadius * 0.25, ROOM.top + 38, ROOM.bottom - 38) },
+        { x: clamp(x + patrolRadius * 0.55, ROOM.left + 38, ROOM.right - 38), y: clamp(y + patrolRadius * 0.7, ROOM.top + 38, ROOM.bottom - 38) },
+        { x: clamp(x - patrolRadius * 0.65, ROOM.left + 38, ROOM.right - 38), y: clamp(y + patrolRadius * 0.6, ROOM.top + 38, ROOM.bottom - 38) },
+      ],
     };
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
   }
 
   function setInput(name, value) {
@@ -244,6 +269,7 @@
         if (!p.potRolling && input.dash && m > 0) {
           p.potCharge += dt;
           pot.shake = Math.min(1, p.potCharge / 0.38);
+          if (p.potCharge > 0.10) alertEnemiesToPot(pot, 185 + pot.shake * 80, false);
           p.potRollX = mx;
           p.potRollY = my;
           if (p.potCharge >= 0.38) {
@@ -394,8 +420,9 @@
             p.vz = 0;
             p.dashJump = false;
             p.airDashUsed = false;
-            messageEl.textContent = '壺の中に隠れた！ ジャンプで飛び出せます';
+            messageEl.textContent = '壺の中に隠れた！ 見られていなければ安全です';
             burst(pot.x, pot.y, 8);
+            alertEnemiesToPot(pot, 0, true);
           }
         }
         if (!p.hiddenPot && p.z <= 0) {
@@ -544,12 +571,28 @@
 
   function updateEnemy(e, dt) {
     e.faceCooldown = Math.max(0, e.faceCooldown - dt);
+    e.alert = Math.max(0, e.alert - dt * 0.32);
     if (e.state === 'stunned') return;
     if (player.attachedEnemy === e) return;
-    if (player.hiddenPot) {
+
+    if (e.state === 'tripped') {
+      e.attackState = 'idle';
+      e.stateTimer -= dt;
+      if (e.stateTimer <= 0) {
+        e.state = 'walk';
+        e.angle += Math.PI;
+        e.attackTimer = 0.55;
+        e.aiState = e.alert > 0 ? 'search' : 'patrol';
+      }
+      return;
+    }
+
+    // 転がる壺は従来どおり剣兵が迎撃する。槍兵には直撃が有効。
+    if (player.hiddenPot && player.potRolling) {
       const pot = player.hiddenPot;
-      // 静止中は完全に見失う。転がる壺だけは剣兵が危険物として迎撃する。
-      if (player.potRolling && e.weapon === 'sword') {
+      e.targetPot = pot;
+      e.aiState = 'investigatePot';
+      if (e.weapon === 'sword') {
         const dx = pot.x - e.x;
         const dy = pot.y - e.y;
         const dist = Math.hypot(dx, dy);
@@ -558,9 +601,7 @@
           if (e.attackState === 'windup') {
             e.attackAngle = Math.atan2(dy, dx);
             if (e.attackTimer <= 0) {
-              e.attackState = 'active';
-              e.attackTimer = 0.22;
-              e.attackHit = false;
+              e.attackState = 'active'; e.attackTimer = 0.22; e.attackHit = false;
             }
           } else if (e.attackState === 'active') {
             trySwordBreakPot(e);
@@ -575,49 +616,94 @@
           e.attackState = 'windup'; e.attackTimer = 0.34; e.attackAngle = Math.atan2(dy, dx);
           return;
         }
+        moveEnemyToward(e, pot.x, pot.y, e.speed * 0.95, dt);
+      } else {
+        // 槍兵は危険な壺を避けながら向きを合わせる。
+        const dx = pot.x - e.x, dy = pot.y - e.y;
+        const dist = Math.hypot(dx, dy) || 1;
         e.angle = Math.atan2(dy, dx);
-        const oldX = e.x, oldY = e.y;
-        e.x += Math.cos(e.angle) * e.speed * 0.9 * dt;
-        e.y += Math.sin(e.angle) * e.speed * 0.9 * dt;
-        if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) { e.x = oldX; e.y = oldY; }
-        return;
-      }
-
-      e.attackState = 'idle';
-      e.attackTimer = Math.max(e.attackTimer, 0.4);
-      e.stateTimer -= dt;
-      if (e.stateTimer <= 0) {
-        e.stateTimer = 0.8 + Math.random() * 1.6;
-        e.angle += (Math.random() - 0.5) * 2.2;
-      }
-      const oldX = e.x, oldY = e.y;
-      e.x += Math.cos(e.angle) * e.speed * 0.55 * dt;
-      e.y += Math.sin(e.angle) * e.speed * 0.55 * dt;
-      if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) { e.x = oldX; e.y = oldY; e.angle += Math.PI; }
-      e.x = Math.max(ROOM.left + 30, Math.min(ROOM.right - 30, e.x));
-      e.y = Math.max(ROOM.top + 30, Math.min(ROOM.bottom - 30, e.y));
-      return;
-    }
-    if (e.state === 'tripped') {
-      e.attackState = 'idle';
-      e.stateTimer -= dt;
-      if (e.stateTimer <= 0) {
-        e.state = 'walk';
-        e.angle += Math.PI;
-        e.attackTimer = 0.55;
+        if (dist < 145) moveEnemyToward(e, e.x - dx, e.y - dy, e.speed * 0.8, dt);
       }
       return;
     }
 
-    const dx = player.x - e.x;
-    const dy = player.y - e.y;
+    const seesPlayer = !player.hiddenPot && player.z < 48 && enemyCanSeePoint(e, player.x, player.y);
+    if (seesPlayer) {
+      e.aiState = 'chase';
+      e.alert = 1;
+      e.lostSightTimer = 1.45;
+      e.lastSeenX = player.x;
+      e.lastSeenY = player.y;
+      e.targetPot = null;
+    } else if (e.aiState === 'chase') {
+      e.lostSightTimer -= dt;
+      if (e.lostSightTimer <= 0) {
+        e.aiState = 'search';
+        e.searchTimer = 3.2;
+        e.attackState = 'idle';
+      }
+    }
+
+    if (player.hiddenPot && e.targetPot?.broken) {
+      e.targetPot = null;
+      e.aiState = 'search';
+      e.searchTimer = 2;
+    }
+
+    if (e.aiState === 'investigatePot' && e.targetPot && !e.targetPot.broken) {
+      updatePotInvestigation(e, dt);
+      return;
+    }
+
+    if (e.aiState === 'chase') {
+      updateEnemyCombatAndChase(e, dt, seesPlayer ? player.x : e.lastSeenX, seesPlayer ? player.y : e.lastSeenY);
+      return;
+    }
+
+    if (e.aiState === 'search') {
+      e.searchTimer -= dt;
+      const arrived = moveEnemyToward(e, e.lastSeenX, e.lastSeenY, e.speed * 0.72, dt);
+      if (arrived) {
+        e.angle += dt * 2.2;
+        e.lastSeenX = clamp(e.lastSeenX + Math.cos(e.angle * 2.1) * 28, ROOM.left + 35, ROOM.right - 35);
+        e.lastSeenY = clamp(e.lastSeenY + Math.sin(e.angle * 1.7) * 28, ROOM.top + 35, ROOM.bottom - 35);
+      }
+      if (e.searchTimer <= 0) {
+        e.aiState = 'patrol';
+        e.alert = 0;
+        e.patrolWait = 0.4;
+      }
+      return;
+    }
+
+    updateEnemyPatrol(e, dt);
+  }
+
+  function updateEnemyPatrol(e, dt) {
+    e.attackState = 'idle';
+    if (e.patrolWait > 0) {
+      e.patrolWait -= dt;
+      e.angle += Math.sin(performance.now() * 0.002 + e.x) * dt * 0.25;
+      return;
+    }
+    const target = e.patrolPoints[e.patrolIndex];
+    if (moveEnemyToward(e, target.x, target.y, e.speed * 0.55, dt)) {
+      e.patrolIndex = (e.patrolIndex + 1) % e.patrolPoints.length;
+      e.patrolWait = 0.45 + Math.random() * 0.9;
+      e.angle += (Math.random() - 0.5) * 0.7;
+    }
+  }
+
+  function updateEnemyCombatAndChase(e, dt, targetX, targetY) {
+    const dx = targetX - e.x;
+    const dy = targetY - e.y;
     const dist = Math.hypot(dx, dy);
     const reach = e.weapon === 'spear' ? 122 : 82;
 
     if (e.attackState !== 'idle') {
       e.attackTimer -= dt;
       if (e.attackState === 'windup') {
-        e.attackAngle = Math.atan2(dy, dx);
+        if (!player.hiddenPot) e.attackAngle = Math.atan2(player.y - e.y, player.x - e.x);
         if (e.attackTimer <= 0) {
           e.attackState = 'active';
           e.attackTimer = e.weapon === 'spear' ? 0.18 : 0.22;
@@ -637,30 +723,119 @@
     }
 
     e.attackTimer -= dt;
-    if (dist < reach && player.z < 34 && e.attackTimer <= 0) {
+    if (!player.hiddenPot && dist < reach && player.z < 34 && e.attackTimer <= 0) {
       e.attackState = 'windup';
       e.attackTimer = e.weapon === 'spear' ? 0.52 : 0.42;
       e.attackAngle = Math.atan2(dy, dx);
       return;
     }
+    moveEnemyToward(e, targetX, targetY, e.speed * 1.12, dt);
+  }
 
-    e.stateTimer -= dt;
-    if (e.stateTimer <= 0) {
-      e.stateTimer = 0.7 + Math.random() * 1.5;
-      const aim = Math.atan2(dy, dx);
-      e.angle = aim + (Math.random() - 0.5) * 1.1;
+  function updatePotInvestigation(e, dt) {
+    const pot = e.targetPot;
+    const dx = pot.x - e.x, dy = pot.y - e.y;
+    const dist = Math.hypot(dx, dy);
+    e.angle = Math.atan2(dy, dx);
+    e.attackState = 'idle';
+
+    if (dist > e.radius + pot.radius + 18) {
+      e.inspectTimer = 0;
+      moveEnemyToward(e, pot.x, pot.y, e.speed * 0.68, dt);
+      return;
     }
+
+    e.inspectTimer += dt;
+    pot.shake = Math.max(pot.shake, Math.sin(e.inspectTimer * 16) > 0.72 ? 0.18 : 0);
+    if (e.inspectTimer > 0.85 && player.hiddenPot === pot && !player.potRolling) {
+      // 調査された壺から強制的に飛び出す。壺そのものは壊さずv8の資源を維持。
+      exitPot(pot, false, -Math.cos(e.angle), -Math.sin(e.angle));
+      player.hurtTimer = Math.max(player.hurtTimer, 0.35);
+      e.aiState = 'chase';
+      e.alert = 1;
+      e.lostSightTimer = 1.5;
+      e.lastSeenX = player.x;
+      e.lastSeenY = player.y;
+      e.targetPot = null;
+      e.inspectTimer = 0;
+      messageEl.textContent = '壺を調べられた！ 見られず静かに入ると安全です';
+      return;
+    }
+    if (e.inspectTimer > 1.2) {
+      e.targetPot = null;
+      e.aiState = 'search';
+      e.searchTimer = 1.8;
+      e.lastSeenX = pot.x;
+      e.lastSeenY = pot.y;
+      e.inspectTimer = 0;
+    }
+  }
+
+  function moveEnemyToward(e, tx, ty, speed, dt) {
+    const dx = tx - e.x, dy = ty - e.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 10) return true;
+    e.angle = Math.atan2(dy, dx);
     const oldX = e.x, oldY = e.y;
-    e.x += Math.cos(e.angle) * e.speed * dt;
-    e.y += Math.sin(e.angle) * e.speed * dt;
+    e.x += dx / dist * speed * dt;
+    e.y += dy / dist * speed * dt;
     if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) {
       e.x = oldX; e.y = oldY;
-      e.angle += Math.PI * (0.65 + Math.random() * 0.7);
+      // 正面が塞がれたら左右へ回り込む。柱越しの直進停止を防ぐ。
+      const side = Math.sin(e.x * 0.031 + e.y * 0.017) > 0 ? 1 : -1;
+      const sideAngle = e.angle + side * Math.PI / 2;
+      e.x += Math.cos(sideAngle) * speed * 0.72 * dt;
+      e.y += Math.sin(sideAngle) * speed * 0.72 * dt;
+      if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) { e.x = oldX; e.y = oldY; }
     }
-    if (e.x < ROOM.left + 30 || e.x > ROOM.right - 30) e.angle = Math.PI - e.angle;
-    if (e.y < ROOM.top + 30 || e.y > ROOM.bottom - 30) e.angle = -e.angle;
-    e.x = Math.max(ROOM.left + 30, Math.min(ROOM.right - 30, e.x));
-    e.y = Math.max(ROOM.top + 30, Math.min(ROOM.bottom - 30, e.y));
+    e.x = clamp(e.x, ROOM.left + 30, ROOM.right - 30);
+    e.y = clamp(e.y, ROOM.top + 30, ROOM.bottom - 30);
+    return false;
+  }
+
+  function enemyCanSeePoint(e, x, y) {
+    const dx = x - e.x, dy = y - e.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > e.visionRange || dist < 1) return false;
+    const targetAngle = Math.atan2(dy, dx);
+    const diff = Math.atan2(Math.sin(targetAngle - e.angle), Math.cos(targetAngle - e.angle));
+    if (Math.abs(diff) > e.visionHalfAngle) return false;
+    return !pillarBlocksSight(e.x, e.y, x, y);
+  }
+
+  function pillarBlocksSight(x1, y1, x2, y2) {
+    return obstacles.some((o) => o.type === 'pillar' && segmentHitsRect(x1, y1, x2, y2, o));
+  }
+
+  function segmentHitsRect(x1, y1, x2, y2, rect) {
+    const pad = 5;
+    const left = rect.x - pad, right = rect.x + rect.w + pad;
+    const top = rect.y - pad, bottom = rect.y + rect.h + pad;
+    let t0 = 0, t1 = 1;
+    const dx = x2 - x1, dy = y2 - y1;
+    const checks = [[-dx, x1 - left], [dx, right - x1], [-dy, y1 - top], [dy, bottom - y1]];
+    for (const [p, q] of checks) {
+      if (p === 0) { if (q < 0) return false; continue; }
+      const r = q / p;
+      if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+      else { if (r < t0) return false; if (r < t1) t1 = r; }
+    }
+    return t0 < t1 && t0 > 0.01 && t0 < 0.99;
+  }
+
+  function alertEnemiesToPot(pot, hearingRange, requireSight) {
+    for (const e of enemies) {
+      if (e.state === 'stunned' || e.state === 'tripped') continue;
+      const dist = Math.hypot(pot.x - e.x, pot.y - e.y);
+      const noticed = requireSight ? enemyCanSeePoint(e, pot.x, pot.y) : dist <= hearingRange;
+      if (!noticed) continue;
+      e.targetPot = pot;
+      e.aiState = 'investigatePot';
+      e.alert = 0.75;
+      e.inspectTimer = 0;
+      e.lastSeenX = pot.x;
+      e.lastSeenY = pot.y;
+    }
   }
 
   function tryEnemyAttackHit(e) {
@@ -824,6 +999,7 @@
 
     drawRoom();
     drawDoor();
+    drawEnemySenses();
 
     const drawableObstacles = obstacles.map((o) => ({ ...o, isObstacle: true, sortY: o.y + o.h }));
     const drawablePots = pots.filter((pot) => !pot.broken).map((pot) => ({ ...pot, isPot: true, sortY: pot.y + pot.radius }));
@@ -859,6 +1035,23 @@
     }
 
     ctx.restore();
+  }
+
+  function drawEnemySenses() {
+    for (const e of enemies) {
+      if (e.state === 'stunned' || e.state === 'tripped') continue;
+      ctx.save();
+      ctx.translate(e.x, e.y);
+      ctx.rotate(e.angle);
+      ctx.globalAlpha = e.aiState === 'chase' ? 0.18 : 0.075;
+      ctx.fillStyle = e.aiState === 'chase' ? '#ff6f5f' : '#ffe58a';
+      ctx.beginPath();
+      ctx.moveTo(8, 0);
+      ctx.arc(0, 0, e.visionRange, -e.visionHalfAngle, e.visionHalfAngle);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   function drawRoom() {
@@ -1040,6 +1233,12 @@
   function drawEnemy(e) {
     ctx.save();
     ctx.translate(e.x, e.y);
+    if (e.state !== 'stunned' && e.state !== 'tripped') {
+      ctx.textAlign = 'center';
+      ctx.font = '900 25px system-ui';
+      if (e.aiState === 'chase') { ctx.fillStyle = '#ff625f'; ctx.fillText('!', 0, -53); }
+      else if (e.aiState === 'investigatePot' || e.aiState === 'search') { ctx.fillStyle = '#ffe27a'; ctx.fillText('?', 0, -53); }
+    }
     ctx.strokeStyle = '#0a0d12';
     ctx.lineWidth = 7;
 
