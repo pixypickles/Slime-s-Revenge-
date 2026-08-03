@@ -257,3 +257,23 @@ button {
   .actions { grid-template-columns: repeat(3, 82px); }
   .action { max-height: 82px; font-size: 12px; }
 }
+
+
+#titleScreen {
+  position: absolute; inset: 0; z-index: 40; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 35%, rgba(74,102,96,.82), rgba(10,13,18,.97) 68%);
+  pointer-events: auto; transition: opacity .2s ease;
+}
+#titleScreen.hidden { opacity: 0; pointer-events: none; }
+.title-card { width: min(78%, 470px); text-align: center; padding: 24px 28px; border: 4px solid #080b11;
+  border-radius: 18px; background: rgba(24,30,38,.92); box-shadow: 0 10px 0 #080b11; }
+.title-kicker { margin: 0 0 4px; color: #f4cf55; font-size: clamp(10px,1.8vmin,15px); font-weight: 900; letter-spacing: .2em; }
+.title-card h1 { margin: 0; font-size: clamp(42px,9vmin,78px); line-height: .82; text-transform: uppercase;
+  color: #ecfff8; text-shadow: 0 5px 0 #080b11; }
+.title-card h1 span { color: #5ee4cf; }
+.title-copy { margin: 16px 0 18px; font-weight: 800; font-size: clamp(12px,2.2vmin,18px); }
+.title-card button { width: 100%; margin-top: 9px; padding: 10px 16px; border-radius: 12px; background: #159ed8;
+  box-shadow: 0 5px 0 #080b11; font-weight: 900; font-size: clamp(14px,2.6vmin,21px); }
+.title-card button + button { background: #b945bd; }
+.title-card button:disabled { opacity: .38; filter: grayscale(.65); }
+#saveStatus { margin: 12px 0 0; color: #cfd8e7; font-size: clamp(10px,1.8vmin,14px); font-weight: 700; }

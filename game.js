@@ -5,6 +5,10 @@
   const ctx = canvas.getContext('2d');
   const messageEl = document.getElementById('message');
   const resetBtn = document.getElementById('resetBtn');
+  const titleScreen = document.getElementById('titleScreen');
+  const startBtn = document.getElementById('startBtn');
+  const continueBtn = document.getElementById('continueBtn');
+  const saveStatus = document.getElementById('saveStatus');
 
   const W = canvas.width;
   const H = canvas.height;
@@ -36,77 +40,81 @@
   let roomCleared;
   let lastTime = performance.now();
   let shake = 0;
+  let currentRoomIndex = 0;
+  let gameMode = 'title';
+  const TOTAL_ROOMS = 6;
+  const SAVE_KEY = 'slimesRevengeSaveV1';
 
-  function resetGame() {
-    player = {
-      x: W / 2,
-      y: H - 120,
-      z: 0,
-      vz: 0,
-      radius: 24,
-      speed: 250,
-      facingX: 0,
-      facingY: -1,
-      dashTimer: 0,
-      dashCooldown: 0,
-      dashX: 0,
-      dashY: -1,
-      invuln: 0,
-      slam: false,
-      diagonalSlam: false,
-      slamX: 0,
-      slamY: -1,
-      dashJump: false,
-      dashJumpX: 0,
-      dashJumpY: -1,
-      airDashUsed: false,
-      wallStick: 0,
-      graceStick: 0,
-      wallNormalX: 0,
-      wallNormalY: 0,
-      wallJumpTimer: 0,
-      wallJumpX: 0,
-      wallJumpY: 0,
-      attachedEnemy: null,
-      attachTimer: 0,
-      hurtTimer: 0,
-      hiddenPot: null,
-      potCharge: 0,
-      potRolling: false,
-      potRollX: 0,
-      potRollY: -1,
+  function makePlayer() {
+    return {
+      x: W / 2, y: H - 120, z: 0, vz: 0, radius: 24, speed: 250,
+      facingX: 0, facingY: -1, dashTimer: 0, dashCooldown: 0, dashX: 0, dashY: -1,
+      invuln: 0, slam: false, diagonalSlam: false, slamX: 0, slamY: -1,
+      dashJump: false, dashJumpX: 0, dashJumpY: -1, airDashUsed: false,
+      wallStick: 0, graceStick: 0, wallNormalX: 0, wallNormalY: 0,
+      wallJumpTimer: 0, wallJumpX: 0, wallJumpY: 0,
+      attachedEnemy: null, attachTimer: 0, hurtTimer: 0, hiddenPot: null,
+      potCharge: 0, potRolling: false, potRollX: 0, potRollY: -1,
     };
-
-    obstacles = [
-      { x: 315, y: 205, w: 86, h: 112, height: 999, type: 'pillar' },
-      { x: 585, y: 175, w: 116, h: 54, height: 58, type: 'crate' },
-      { x: 510, y: 350, w: 88, h: 58, height: 58, type: 'crate' },
-    ];
-    pots = [
-      { x: 235, y: 355, radius: 28, broken: false, shake: 0, rolling: false, rollSpeed: 0 },
-      { x: 745, y: 330, radius: 28, broken: false, shake: 0, rolling: false, rollSpeed: 0 },
-    ];
-    enemies = [
-      makeEnemy(205, 180, 'sword'),
-      makeEnemy(500, 250, 'spear'),
-      makeEnemy(755, 185, 'sword'),
-    ];
-    particles = [];
-    doorOpen = false;
-    roomCleared = false;
-    messageEl.textContent = '敵を全員気絶させると扉が開きます';
   }
 
+  function roomData(index) {
+    const rooms = [
+      { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], enemies:[[235,190,'sword']] },
+      { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360}], enemies:[[200,180,'sword'],[745,180,'spear']] },
+      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
+      { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380}], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'sword'],[790,160,'spear']] },
+      { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], enemies:[[190,170,'sword'],[350,335,'spear'],[610,335,'spear'],[770,170,'sword']] },
+      { name: '守護隊長の間', obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380},{x:675,y:380}], enemies:[[480,205,'boss']] },
+    ];
+    return rooms[index];
+  }
+
+  function loadRoom(index, save = true) {
+    currentRoomIndex = clamp(index, 0, TOTAL_ROOMS - 1);
+    const data = roomData(currentRoomIndex);
+    player = makePlayer();
+    obstacles = data.obstacles.map(o => ({...o}));
+    pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0}));
+    enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
+    particles = []; doorOpen = false; roomCleared = false; shake = 0;
+    messageEl.textContent = `第${currentRoomIndex + 1}部屋「${data.name}」— 敵を全員無力化せよ`;
+    if (save) saveProgress();
+  }
+
+  function saveProgress() {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ room: currentRoomIndex, updated: Date.now() })); } catch (_) {}
+    updateContinueButton();
+  }
+
+  function readSave() {
+    try { const v = JSON.parse(localStorage.getItem(SAVE_KEY)); return Number.isInteger(v?.room) ? clamp(v.room,0,TOTAL_ROOMS-1) : null; } catch (_) { return null; }
+  }
+
+  function updateContinueButton() {
+    const room = readSave();
+    continueBtn.disabled = room === null;
+    saveStatus.textContent = room === null ? 'セーブデータなし' : `第${room + 1}部屋から再開できます`;
+  }
+
+  function showTitle() { gameMode = 'title'; titleScreen.classList.remove('hidden'); updateContinueButton(); }
+  function startGame(room) { gameMode = 'playing'; titleScreen.classList.add('hidden'); loadRoom(room); }
+  function resetGame() { if (gameMode === 'playing') loadRoom(currentRoomIndex, false); else showTitle(); }
+
   function makeEnemy(x, y, weapon = 'sword') {
-    const patrolRadius = weapon === 'spear' ? 115 : 145;
+    const isBoss = weapon === 'boss';
+    if (isBoss) weapon = 'sword';
+    const patrolRadius = isBoss ? 90 : (weapon === 'spear' ? 115 : 145);
     return {
       x, y,
-      radius: 25,
-      hp: 2,
+      radius: isBoss ? 38 : 25,
+      hp: isBoss ? 3 : 2,
+      isBoss,
+      bossLives: isBoss ? 3 : 1,
       state: 'walk', // walk, tripped, stunned（既存戦闘状態）
       stateTimer: 0,
       angle: Math.random() * Math.PI * 2,
-      speed: 58 + Math.random() * 18,
+      speed: isBoss ? 92 : 58 + Math.random() * 18,
       faceCooldown: 0,
       weapon,
       attackState: 'idle', // idle, windup, active, recover
@@ -117,7 +125,7 @@
 
       // v0.9 敵AI。戦闘状態とは分離し、既存の転倒・気絶処理を維持する。
       aiState: 'patrol', // patrol, chase, search, investigatePot
-      visionRange: weapon === 'spear' ? 300 : 270,
+      visionRange: isBoss ? 380 : (weapon === 'spear' ? 300 : 270),
       visionHalfAngle: weapon === 'spear' ? 0.62 : 0.78,
       alert: 0,
       lostSightTimer: 0,
@@ -233,8 +241,11 @@
   joystick.addEventListener('lostpointercapture', releaseJoystick);
 
   resetBtn.addEventListener('click', resetGame);
+  startBtn.addEventListener('click', () => { try { localStorage.removeItem(SAVE_KEY); } catch (_) {} startGame(0); });
+  continueBtn.addEventListener('click', () => startGame(readSave() ?? 0));
 
   function update(dt) {
+    if (gameMode !== 'playing') { clearPressed(); return; }
     const p = player;
     p.dashCooldown = Math.max(0, p.dashCooldown - dt);
     p.dashTimer = Math.max(0, p.dashTimer - dt);
@@ -376,8 +387,7 @@
           p.vz = 80;
           e.faceCooldown = 0.7;
         } else if (p.attachTimer >= 1.25) {
-          e.state = 'stunned';
-          e.stateTimer = 999;
+          stunEnemy(e);
           p.attachedEnemy = null;
           p.z = 15;
           p.vz = 110;
@@ -463,12 +473,29 @@
 
     checkDoorOpen();
     if (doorOpen && !roomCleared && p.y < ROOM.top + 34 && p.x > DOOR.x && p.x < DOOR.x + DOOR.w) {
-      roomCleared = true;
-      messageEl.textContent = '試作クリア！';
-      burst(p.x, p.y, 28);
+      roomCleared = true; burst(p.x, p.y, 28);
+      if (currentRoomIndex < TOTAL_ROOMS - 1) {
+        messageEl.textContent = '次の部屋へ…';
+        loadRoom(currentRoomIndex + 1);
+      } else {
+        gameMode = 'complete';
+        messageEl.textContent = '守護隊長を倒した！ Slime’s Revenge クリア！';
+        try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
+      }
     }
 
     clearPressed();
+  }
+
+  function stunEnemy(e) {
+    if (e.isBoss && e.bossLives > 1) {
+      e.bossLives--; e.state = 'tripped'; e.stateTimer = 1.35; e.attackState = 'idle';
+      e.speed += 18; e.visionRange += 20; shake = Math.max(shake, 12); burst(e.x,e.y,28);
+      messageEl.textContent = `ボスの装甲を破った！ 残り${e.bossLives}段階`;
+      return false;
+    }
+    e.state = 'stunned'; e.stateTimer = 999; burst(e.x,e.y,e.isBoss ? 42 : 16);
+    return true;
   }
 
   function checkDoorOpen() {
@@ -506,8 +533,7 @@
     if (hitEnemy) {
       if (hitEnemy.weapon === 'spear') {
         hitEnemy.hp = 0;
-        hitEnemy.state = 'stunned';
-        hitEnemy.stateTimer = 999;
+        stunEnemy(hitEnemy);
         hitEnemy.attackState = 'idle';
         messageEl.textContent = '壺が槍兵を直撃！ 槍兵を気絶させた！';
       } else {
@@ -1019,8 +1045,20 @@
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+    ctx.save();
+    ctx.textAlign = 'left'; ctx.font = '800 18px system-ui'; ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#11151d'; ctx.lineWidth = 5;
+    const roomLabel = `ROOM ${currentRoomIndex + 1} / ${TOTAL_ROOMS}`;
+    ctx.strokeText(roomLabel, 82, 91); ctx.fillText(roomLabel, 82, 91);
+    const boss = enemies.find(e => e.isBoss && e.state !== 'stunned');
+    if (boss) {
+      ctx.fillStyle = '#171b22'; ctx.fillRect(W/2-180, 76, 360, 20);
+      ctx.fillStyle = '#ff6d62'; ctx.fillRect(W/2-175, 81, 350 * (boss.bossLives/3), 10);
+      ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='900 15px system-ui'; ctx.fillText('守護隊長', W/2, 72);
+    }
+    ctx.restore();
 
-    if (roomCleared) {
+    if (gameMode === 'complete') {
       ctx.fillStyle = 'rgba(7,10,15,.68)';
       ctx.fillRect(0, 0, W, H);
       ctx.textAlign = 'center';
@@ -1028,10 +1066,10 @@
       ctx.strokeStyle = '#080a0e';
       ctx.lineWidth = 9;
       ctx.font = '900 52px system-ui';
-      ctx.strokeText('試作クリア！', W / 2, H / 2 - 6);
-      ctx.fillText('試作クリア！', W / 2, H / 2 - 6);
+      ctx.strokeText('Slime’s Revenge クリア！', W / 2, H / 2 - 6);
+      ctx.fillText('Slime’s Revenge クリア！', W / 2, H / 2 - 6);
       ctx.font = '800 22px system-ui';
-      ctx.fillText('「やり直し」で再プレイ', W / 2, H / 2 + 38);
+      ctx.fillText('やり直しで最終部屋を再戦できます', W / 2, H / 2 + 38);
     }
 
     ctx.restore();
@@ -1233,6 +1271,7 @@
   function drawEnemy(e) {
     ctx.save();
     ctx.translate(e.x, e.y);
+    if (e.isBoss) { ctx.scale(1.32, 1.32); ctx.fillStyle='#f4cf55'; ctx.strokeStyle='#0a0d12'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-18,-40); ctx.lineTo(-11,-57); ctx.lineTo(0,-43); ctx.lineTo(11,-57); ctx.lineTo(18,-40); ctx.closePath(); ctx.fill(); ctx.stroke(); }
     if (e.state !== 'stunned' && e.state !== 'tripped') {
       ctx.textAlign = 'center';
       ctx.font = '900 25px system-ui';
@@ -1331,6 +1370,7 @@
     requestAnimationFrame(frame);
   }
 
-  resetGame();
+  player = makePlayer(); enemies = []; obstacles = []; pots = []; particles = []; doorOpen = false; roomCleared = false;
+  showTitle();
   requestAnimationFrame(frame);
 })();

@@ -4,14 +4,25 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#11151d" />
-  <title>Slime Room Prototype v8</title>
-  <link rel="stylesheet" href="style.css?v=9" />
+  <title>Slime's Revenge v1.0</title>
+  <link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
   <main id="gameWrap">
     <section id="stageArea">
       <div id="stageFrame">
         <canvas id="game" width="960" height="540" aria-label="スライムアクションゲーム"></canvas>
+
+        <section id="titleScreen" aria-label="タイトル画面">
+          <div class="title-card">
+            <p class="title-kicker">TOP-DOWN SLIME ACTION</p>
+            <h1>Slime's<br><span>Revenge</span></h1>
+            <p class="title-copy">奪われた遺跡を、スライムの力で取り戻せ。</p>
+            <button id="startBtn" type="button">はじめから</button>
+            <button id="continueBtn" type="button">続きから</button>
+            <p id="saveStatus">セーブデータなし</p>
+          </div>
+        </section>
 
         <div id="hud">
           <div id="message">敵を全員気絶させると扉が開きます</div>
@@ -34,6 +45,6 @@
     </section>
   </main>
 
-  <script src="game.js?v=9"></script>
+  <script src="game.js?v=10"></script>
 </body>
 </html>
