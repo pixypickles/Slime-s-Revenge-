@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#1f2430" />
+  <title>Slime Room Prototype</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="gameWrap">
+    <canvas id="game" width="960" height="540" aria-label="スライムアクションゲーム"></canvas>
+
+    <div id="hud">
+      <div id="message">敵を全員気絶させると扉が開きます</div>
+      <button id="resetBtn" type="button">やり直し</button>
+    </div>
+
+    <div id="mobileControls" aria-label="スマホ操作">
+      <div class="dpad">
+        <button class="pad up" data-key="up">▲</button>
+        <button class="pad left" data-key="left">◀</button>
+        <button class="pad right" data-key="right">▶</button>
+        <button class="pad down" data-key="down">▼</button>
+      </div>
+      <div class="actions">
+        <button class="action dash" data-key="dash">ダッシュ</button>
+        <button class="action jump" data-key="jump">ジャンプ</button>
+        <button class="action stick" data-key="stick">くっつき</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
