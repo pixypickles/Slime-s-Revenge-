@@ -86,6 +86,8 @@
       // 回復壺は右上隅。中央寄りの2本のツタ、または精密なダッシュジャンプで狙う。
       vines:[{x:520,y:70,length:250},{x:665,y:72,length:205}],
       hazards:[
+        // 天井側まで棘をつなぎ、上端を歩いて回り込めないようにする。
+        {x:498,y:82,w:374,h:42,type:'spikes'},
         {x:498,y:118,w:244,h:304,type:'spikes'},
         {x:794,y:276,w:78,h:146,type:'spikes'},
         {x:742,y:276,w:52,h:146,type:'spikes'}
@@ -113,7 +115,7 @@
     player.maxHp = runStats.maxHp;
     obstacles = data.obstacles.map(o => ({...o}));
     pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0, used:false}));
-    plants = (data.plants || []).map(o => ({...o, fruitReady:false, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
+    plants = (data.plants || []).map(o => ({...o, fruitReady:false, fruitX:null, fruitY:null, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
     vines = (data.vines || []).map((v, i) => ({...v, id:`vine-${currentRoomIndex}-${i}`, sway:Math.random()*Math.PI*2}));
     hazards = (data.hazards || []).map(h => ({...h, pulse:Math.random()*Math.PI*2}));
     enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
@@ -1224,13 +1226,57 @@
     saveProgress();
   }
 
+  function fruitPositionIsSafe(x, y) {
+    const radius = 18;
+    if (x < 125 || x > 835 || y < 115 || y > 420) return false;
+    if (obstacles.some(o => circleRectHit(x, y, radius, o))) return false;
+    if (hazards.some(h => h.type === 'spikes' && circleRectHit(x, y, radius, spikeHitbox(h, 8)))) return false;
+    if (pots.some(p => !p.broken && Math.hypot(x - p.x, y - p.y) < radius + p.radius + 8)) return false;
+    return true;
+  }
+
+  function placePlantFruit(plant) {
+    // 植物の上を優先し、塞がっていれば近い安全地点を段階的に探す。
+    const offsets = [
+      [0,-36],[-42,-34],[42,-34],[-54,0],[54,0],[0,42],
+      [-72,-32],[72,-32],[-72,28],[72,28],[0,-78],[-96,0],[96,0]
+    ];
+    for (const [ox, oy] of offsets) {
+      const x = plant.x + ox, y = plant.y + oy;
+      if (fruitPositionIsSafe(x, y)) {
+        plant.fruitX = x;
+        plant.fruitY = y;
+        return;
+      }
+    }
+    // 念のため周囲を格子探索。配置物が増えても取得不能になりにくい。
+    for (let radius = 48; radius <= 150; radius += 24) {
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+        const x = plant.x + Math.cos(angle) * radius;
+        const y = plant.y + Math.sin(angle) * radius;
+        if (fruitPositionIsSafe(x, y)) {
+          plant.fruitX = x;
+          plant.fruitY = y;
+          return;
+        }
+      }
+    }
+    plant.fruitX = clamp(plant.x, 125, 835);
+    plant.fruitY = clamp(plant.y - 36, 115, 420);
+  }
+
   function updatePlants(dt) {
     const allDefeated = enemies.every(e => e.state === 'stunned');
     for (const plant of plants) {
       plant.pulse += dt * 3;
-      if (allDefeated && !plant.consumed) plant.fruitReady = true;
+      if (allDefeated && !plant.consumed && !plant.fruitReady) {
+        plant.fruitReady = true;
+        placePlantFruit(plant);
+      }
       if (!plant.fruitReady || plant.consumed) continue;
-      const dist = Math.hypot(player.x - plant.x, player.y - plant.y);
+      const fruitX = plant.fruitX ?? plant.x;
+      const fruitY = plant.fruitY ?? (plant.y - 36);
+      const dist = Math.hypot(player.x - fruitX, player.y - fruitY);
       if (input.stickPressed && player.z < 28 && dist < 58) {
         plant.consumed = true;
         plant.fruitReady = false;
@@ -1241,11 +1287,11 @@
           runStats.hp = player.hp;
           if (plant.id && !runStats.maxFruitTaken.includes(plant.id)) runStats.maxFruitTaken.push(plant.id);
           messageEl.textContent = '色違いのゼリーの実を吸収！ 最大HPが1増えた！';
-          burst(plant.x, plant.y, 28);
+          burst(fruitX, fruitY, 28);
           saveProgress();
         } else {
           healPlayer(1, 'ゼリーの実を吸収してHPが1回復した！');
-          burst(plant.x, plant.y, 18);
+          burst(fruitX, fruitY, 18);
         }
       }
     }
@@ -1728,14 +1774,16 @@
     ctx.fillStyle = '#234d35'; ctx.beginPath(); ctx.ellipse(0,15,20,8,0,0,Math.PI*2); ctx.fill();
     if (plant.fruitReady && !plant.consumed) {
       const bob = Math.sin(plant.pulse) * 3;
+      const fx = (plant.fruitX ?? plant.x) - plant.x;
+      const fy = (plant.fruitY ?? (plant.y - 36)) - plant.y;
       ctx.shadowBlur = 16;
       ctx.shadowColor = plant.type === 'max' ? '#ff8df5' : '#8fffc8';
       ctx.fillStyle = plant.type === 'max' ? '#dd72ff' : '#74edaa';
-      ctx.beginPath(); ctx.arc(0,-36+bob,12,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(-4,-40+bob,3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(fx,fy+bob,12,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(fx-4,fy-4+bob,3,0,Math.PI*2); ctx.fill();
       ctx.shadowBlur = 0;
       ctx.textAlign='center'; ctx.font='800 13px system-ui'; ctx.fillStyle='#fff'; ctx.strokeStyle='#111'; ctx.lineWidth=4;
-      ctx.strokeText('くっつき',0,-57+bob); ctx.fillText('くっつき',0,-57+bob);
+      ctx.strokeText('くっつき',fx,fy-21+bob); ctx.fillText('くっつき',fx,fy-21+bob);
     }
     ctx.restore();
   }
