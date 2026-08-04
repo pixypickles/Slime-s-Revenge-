@@ -47,7 +47,7 @@
   let shake = 0;
   let currentRoomIndex = 0;
   let gameMode = 'title';
-  const TOTAL_ROOMS = 18;
+  const TOTAL_ROOMS = 20;
   const SAVE_KEY = 'slimesRevengeSaveV2';
   const LEGACY_SAVE_KEY = 'slimesRevengeSaveV1';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
@@ -93,6 +93,7 @@
         {x:742,y:276,w:52,h:146,type:'spikes'}
       ],
       enemies:[[175,180,'sword'],[350,345,'bow'],[420,175,'heavy']] },
+      { name: '十の守護門', checkpointBoss:true, bossLives:5, obstacles: [{x:205,y:215,w:72,h:122,height:999,type:'pillar'},{x:683,y:215,w:72,h:122,height:999,type:'pillar'}], pots:[{x:165,y:390,mystic:true},{x:795,y:390,mystic:true}], plants:[{x:480,y:400,type:'heal'}], vines:[{x:480,y:72,length:185}], hazards:[], enemies:[[480,205,'boss']] },
       { name: '連環の吊り橋', obstacles: [{x:205,y:245,w:72,h:120,height:999,type:'pillar'},{x:700,y:175,w:72,h:120,height:999,type:'pillar'}], pots:[{x:155,y:390},{x:805,y:390,mystic:true}], plants:[{x:470,y:155,type:'max',id:'max-room-10'}], vines:[{x:330,y:70,length:170},{x:480,y:72,length:285},{x:635,y:70,length:205}], hazards:[{x:285,y:250,w:390,h:125,type:'spikes'}], enemies:[[165,165,'bow'],[420,185,'heavy'],[565,180,'spear'],[805,170,'bow']] },
       { name: '王の茨庭', obstacles: [{x:180,y:180,w:72,h:125,height:999,type:'pillar'},{x:708,y:180,w:72,h:125,height:999,type:'pillar'},{x:430,y:330,w:100,h:55,height:58,type:'crate'}], pots:[{x:150,y:390,mystic:true},{x:810,y:390}], plants:[{x:480,y:150,type:'heal'}], vines:[{x:285,y:72,length:225},{x:480,y:70,length:155},{x:675,y:72,length:260}], hazards:[{x:300,y:210,w:150,h:105,type:'spikes'},{x:510,y:210,w:150,h:105,type:'spikes'}], enemies:[[150,160,'heavy'],[300,365,'bow'],[480,190,'spear'],[660,365,'bow'],[810,160,'sword']] },
       { name: '静かな蔓廊', obstacles: [{x:210,y:180,w:72,h:125,height:999,type:'pillar'},{x:682,y:270,w:72,h:125,height:999,type:'pillar'}], pots:[{x:155,y:390},{x:805,y:390,mystic:true}], plants:[{x:790,y:145,type:'heal'}], vines:[{x:345,y:72,length:155},{x:505,y:72,length:265},{x:650,y:72,length:195}], hazards:[{x:310,y:285,w:330,h:105,type:'spikes'}], enemies:[[165,165,'bow'],[415,185,'spear'],[600,180,'heavy'],[800,175,'bow']] },
@@ -101,7 +102,8 @@
       { name: '割れ橋の回廊', obstacles: [{x:185,y:180,w:70,h:122,height:999,type:'pillar'},{x:705,y:285,w:70,h:122,height:999,type:'pillar'},{x:430,y:340,w:100,h:54,height:58,type:'crate'}], pots:[{x:150,y:395},{x:810,y:155,mystic:true}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:315,y:70,length:165},{x:535,y:70,length:275},{x:720,y:70,length:185}], hazards:[{x:270,y:245,w:175,h:150,type:'spikes'},{x:515,y:245,w:175,h:150,type:'spikes'}], enemies:[[155,165,'bow'],[360,180,'heavy'],[600,180,'spear'],[805,345,'bow']] },
       { name: '壺兵の関所', obstacles: [{x:250,y:205,w:76,h:126,height:999,type:'pillar'},{x:635,y:205,w:76,h:126,height:999,type:'pillar'},{x:430,y:270,w:100,h:55,height:58,type:'crate'}], pots:[{x:145,y:385},{x:300,y:385},{x:660,y:385},{x:815,y:385,mystic:true}], plants:[{x:480,y:145,type:'max',id:'max-room-17'}], vines:[{x:480,y:72,length:205}], hazards:[], enemies:[[170,170,'spear'],[350,175,'heavy'],[610,175,'spear'],[790,170,'bow']] },
       { name: '最後の蔓庭', obstacles: [{x:205,y:190,w:72,h:125,height:999,type:'pillar'},{x:683,y:190,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[{x:480,y:155,type:'heal'}], vines:[{x:285,y:70,length:285},{x:480,y:70,length:155},{x:675,y:70,length:245}], hazards:[{x:300,y:220,w:145,h:185,type:'spikes'},{x:515,y:220,w:145,h:185,type:'spikes'}], enemies:[[155,165,'heavy'],[335,175,'bow'],[480,185,'spear'],[625,175,'bow'],[805,165,'heavy']] },
-      { name: '守護隊長の間', finalBoss:true, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[], enemies:[[480,205,'boss']] },
+      { name: '風矢の回廊', obstacles: [{x:330,y:185,w:72,h:125,height:999,type:'pillar'},{x:620,y:275,w:72,h:125,height:999,type:'pillar'}], pots:[{x:190,y:390,mystic:true},{x:780,y:390}], plants:[{x:790,y:145,type:'heal'}], vines:[{x:500,y:72,length:245}], hazards:[{x:100,y:82,w:58,h:340,type:'spikes'},{type:'wind',x:155,y:82,w:717,h:340,dirX:-1,dirY:0,interval:5.2,duration:2.0,power:235},{type:'turret',x:850,y:155,dirX:-1,dirY:0,interval:2.25,delay:0.5},{type:'turret',x:850,y:330,dirX:-1,dirY:0,interval:2.8,delay:1.4}], enemies:[[260,170,'bow'],[515,185,'heavy'],[750,250,'spear']] },
+      { name: '守護隊長の間', finalBoss:true, bossLives:7, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[{type:'turret',x:840,y:150,dirX:-1,dirY:0,interval:3.1,delay:0.8},{type:'turret',x:120,y:340,dirX:1,dirY:0,interval:3.6,delay:2.0}], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
   }
@@ -117,8 +119,9 @@
     pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0, used:false}));
     plants = (data.plants || []).map(o => ({...o, fruitReady:false, fruitX:null, fruitY:null, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
     vines = (data.vines || []).map((v, i) => ({...v, id:`vine-${currentRoomIndex}-${i}`, sway:Math.random()*Math.PI*2}));
-    hazards = (data.hazards || []).map(h => ({...h, pulse:Math.random()*Math.PI*2}));
+    hazards = (data.hazards || []).map(h => ({...h, pulse:Math.random()*Math.PI*2, timer:-(h.delay || 0), active:false, activeTimer:0}));
     enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
+    if (data.bossLives) for (const e of enemies) if (e.isBoss) e.bossLives = data.bossLives;
     particles = []; arrows = []; doorOpen = false; roomCleared = false; shake = 0;
     messageEl.textContent = `第${currentRoomIndex + 1}部屋「${data.name}」— 敵を全員無力化せよ`;
     if (save) saveProgress();
@@ -589,6 +592,11 @@
         if (nextRoom < TOTAL_ROOMS) {
           messageEl.textContent = '次の部屋へ…';
           runStats.hp = p.hp; runStats.maxHp = p.maxHp;
+          if (currentRoomData?.checkpointBoss) {
+            runStats.hp = runStats.maxHp;
+            messageEl.textContent = '守護者を倒した！ セーブポイントでHPが全回復した';
+            saveProgress();
+          }
           loadRoom(nextRoom);
         } else {
           // データ不整合時も誤ってクリアにせず、進行不能の原因を画面へ示す。
@@ -1236,12 +1244,9 @@
   }
 
   function placePlantFruit(plant) {
-    // 植物の上を優先し、塞がっていれば近い安全地点を段階的に探す。
-    const offsets = [
-      [0,-36],[-42,-34],[42,-34],[-54,0],[54,0],[0,42],
-      [-72,-32],[72,-32],[-72,28],[72,28],[0,-78],[-96,0],[96,0]
-    ];
-    for (const [ox, oy] of offsets) {
+    // 実は茎の先に見える距離を最優先。障害物がある時は植物ごと近くへ移す。
+    const closeFruitOffsets = [[0,-31],[-18,-29],[18,-29],[-24,-22],[24,-22]];
+    for (const [ox, oy] of closeFruitOffsets) {
       const x = plant.x + ox, y = plant.y + oy;
       if (fruitPositionIsSafe(x, y)) {
         plant.fruitX = x;
@@ -1249,20 +1254,17 @@
         return;
       }
     }
-    // 念のため周囲を格子探索。配置物が増えても取得不能になりにくい。
-    for (let radius = 48; radius <= 150; radius += 24) {
-      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
-        const x = plant.x + Math.cos(angle) * radius;
-        const y = plant.y + Math.sin(angle) * radius;
-        if (fruitPositionIsSafe(x, y)) {
-          plant.fruitX = x;
-          plant.fruitY = y;
-          return;
-        }
-      }
+    const plantMoves = [[-36,0],[36,0],[0,36],[-36,30],[36,30],[-60,0],[60,0]];
+    for (const [mx,my] of plantMoves) {
+      const nx=plant.x+mx, ny=plant.y+my;
+      if (!fruitPositionIsSafe(nx, ny)) continue;
+      const fx=nx, fy=ny-31;
+      if (!fruitPositionIsSafe(fx, fy)) continue;
+      plant.x=nx; plant.y=ny; plant.fruitX=fx; plant.fruitY=fy;
+      return;
     }
-    plant.fruitX = clamp(plant.x, 125, 835);
-    plant.fruitY = clamp(plant.y - 36, 115, 420);
+    plant.fruitX = plant.x;
+    plant.fruitY = plant.y - 31;
   }
 
   function updatePlants(dt) {
@@ -1461,25 +1463,43 @@
   }
 
   function updateHazards(dt) {
-    if (!hazards?.length || player.deathTimer > 0 || player.hiddenPot || player.vineAttached) return;
+    if (!hazards?.length || player.deathTimer > 0) return;
     for (const hazard of hazards) {
       hazard.pulse += dt * 2.4;
-      if (hazard.type !== 'spikes') continue;
-      // 高く跳んでいれば棘床を越えられる。通常ジャンプ、ダッシュジャンプ、ツタの全てが解法になる。
-      if (player.z >= 22 || player.invuln > 0) continue;
-      const hitbox = spikeHitbox(hazard, 13);
-      if (hitbox.w > 0 && hitbox.h > 0 && circleRectHit(player.x, player.y, player.radius * 0.48, hitbox)) {
-        damagePlayer(1, 'トゲ床！ HPが1減った');
-        const cx = hazard.x + hazard.w / 2;
-        const cy = hazard.y + hazard.h / 2;
-        let dx = player.x - cx, dy = player.y - cy;
-        const len = Math.hypot(dx, dy) || 1;
-        player.x += dx / len * 24;
-        player.y += dy / len * 24;
-        player.vz = Math.max(player.vz, 250);
-        break;
+      if (hazard.type === 'spikes') {
+        if (player.hiddenPot || player.vineAttached || player.z >= 22 || player.invuln > 0) continue;
+        const hitbox = spikeHitbox(hazard, 13);
+        if (hitbox.w > 0 && hitbox.h > 0 && circleRectHit(player.x, player.y, player.radius * 0.48, hitbox)) {
+          damagePlayer(1, 'トゲ床！ HPが1減った');
+          const cx = hazard.x + hazard.w / 2, cy = hazard.y + hazard.h / 2;
+          let dx = player.x - cx, dy = player.y - cy;
+          const len = Math.hypot(dx, dy) || 1;
+          player.x += dx / len * 24; player.y += dy / len * 24; player.vz = Math.max(player.vz, 250);
+        }
+      } else if (hazard.type === 'wind') {
+        hazard.timer += dt;
+        if (!hazard.active && hazard.timer >= (hazard.interval || 5)) { hazard.active=true; hazard.activeTimer=hazard.duration || 2; hazard.timer=0; messageEl.textContent='右から強風が吹いてきた！'; }
+        if (hazard.active) {
+          hazard.activeTimer -= dt;
+          if (hazard.activeTimer <= 0) hazard.active=false;
+          if (!player.hiddenPot && !player.vineAttached && player.x>hazard.x && player.x<hazard.x+hazard.w && player.y>hazard.y && player.y<hazard.y+hazard.h) {
+            const scale = player.z > 18 ? 1.2 : 1;
+            player.x += (hazard.dirX || -1) * (hazard.power || 220) * dt * scale;
+            player.y += (hazard.dirY || 0) * (hazard.power || 220) * dt * scale;
+          }
+        }
+      } else if (hazard.type === 'turret') {
+        hazard.timer += dt;
+        if (hazard.timer >= (hazard.interval || 2.5)) {
+          hazard.timer = 0;
+          const a=Math.atan2(hazard.dirY || 0, hazard.dirX || -1);
+          arrows.push({x:hazard.x,y:hazard.y,vx:Math.cos(a)*470,vy:Math.sin(a)*470,angle:a,radius:7,life:2.4,owner:null,trap:true});
+          burst(hazard.x,hazard.y,6);
+        }
       }
     }
+    player.x = clamp(player.x, ROOM.left + player.radius, ROOM.right - player.radius);
+    player.y = clamp(player.y, ROOM.top + player.radius, ROOM.bottom - player.radius);
   }
 
   function clearPressed() {
@@ -1530,7 +1550,7 @@
     const boss = enemies.find(e => e.isBoss && e.state !== 'stunned');
     if (boss) {
       ctx.fillStyle = '#171b22'; ctx.fillRect(W/2-180, 76, 360, 20);
-      ctx.fillStyle = '#ff6d62'; ctx.fillRect(W/2-175, 81, 350 * (boss.bossLives/3), 10);
+      ctx.fillStyle = '#ff6d62'; ctx.fillRect(W/2-175, 81, 350 * (boss.bossLives/(currentRoomData?.bossLives || 3)), 10);
       ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='900 15px system-ui'; ctx.fillText('守護隊長', W/2, 72);
     }
     ctx.restore();
@@ -1607,6 +1627,17 @@
   }
 
   function drawHazard(hazard) {
+    if (hazard.type === 'wind') {
+      if (!hazard.active) return;
+      ctx.save(); ctx.globalAlpha=.34; ctx.strokeStyle='#d9f3ff'; ctx.lineWidth=4;
+      for (let y=hazard.y+30;y<hazard.y+hazard.h;y+=48) { ctx.beginPath(); ctx.moveTo(hazard.x+hazard.w-10,y); ctx.lineTo(hazard.x+20,y+12); ctx.stroke(); }
+      ctx.restore(); return;
+    }
+    if (hazard.type === 'turret') {
+      ctx.save(); ctx.translate(hazard.x,hazard.y); ctx.fillStyle='#554b42'; ctx.strokeStyle='#11151d'; ctx.lineWidth=5;
+      ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.rotate(Math.atan2(hazard.dirY||0,hazard.dirX||-1)); ctx.fillStyle='#252a30'; ctx.fillRect(0,-7,28,14); ctx.strokeRect(0,-7,28,14); ctx.restore(); return;
+    }
     if (hazard.type !== 'spikes') return;
     ctx.save();
     // 床面より一段低い棘穴として描画。縁に少し触れただけではダメージにならない。
