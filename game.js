@@ -47,7 +47,7 @@
   let shake = 0;
   let currentRoomIndex = 0;
   let gameMode = 'title';
-  const TOTAL_ROOMS = 9;
+  const TOTAL_ROOMS = 12;
   const SAVE_KEY = 'slimesRevengeSaveV2';
   const LEGACY_SAVE_KEY = 'slimesRevengeSaveV1';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
@@ -77,6 +77,9 @@
       { name: '吊り庭の間', obstacles: [{x:430,y:260,w:100,h:54,height:58,type:'crate'}], pots:[{x:180,y:380,mystic:true}], plants:[{x:790,y:390,type:'heal'}], vines:[{x:305,y:82,length:150},{x:635,y:82,length:245}], hazards:[], enemies:[[190,170,'sword'],[770,175,'bow'],[480,350,'spear']] },
       { name: '棘床の水路', obstacles: [{x:210,y:175,w:72,h:118,height:999,type:'pillar'},{x:678,y:175,w:72,h:118,height:999,type:'pillar'}], pots:[{x:145,y:405},{x:815,y:405,mystic:true}], plants:[{x:790,y:150,type:'max',id:'max-room-7'}], vines:[{x:480,y:76,length:285},{x:305,y:72,length:175},{x:655,y:72,length:215}], hazards:[{x:315,y:205,w:330,h:175,type:'spikes'}], enemies:[[165,150,'bow'],[795,150,'bow'],[480,170,'spear']] },
       { name: '守護門前', obstacles: [{x:295,y:190,w:76,h:132,height:999,type:'pillar'},{x:590,y:190,w:76,h:132,height:999,type:'pillar'},{x:430,y:330,w:100,h:58,height:60,type:'crate'}], pots:[{x:175,y:365,mystic:true},{x:785,y:365},{x:480,y:405}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:350,y:72,length:185},{x:580,y:72,length:265}], hazards:[{x:405,y:205,w:150,h:105,type:'spikes'}], enemies:[[160,160,'sword'],[320,350,'bow'],[480,190,'spear'],[640,350,'bow'],[800,160,'sword']] },
+      { name: '茨の大広間', obstacles: [{x:235,y:185,w:76,h:128,height:999,type:'pillar'}], pots:[{x:755,y:298,mystic:true},{x:180,y:390}], plants:[{x:205,y:145,type:'heal'}], vines:[{x:520,y:70,length:250},{x:665,y:72,length:205},{x:820,y:70,length:275}], hazards:[{x:500,y:110,w:390,h:150,type:'spikes'},{x:500,y:260,w:205,h:135,type:'spikes'},{x:805,y:260,w:85,h:135,type:'spikes'}], enemies:[[175,180,'sword'],[360,345,'bow'],[420,175,'spear']] },
+      { name: '連環の吊り橋', obstacles: [{x:205,y:245,w:72,h:120,height:999,type:'pillar'},{x:700,y:175,w:72,h:120,height:999,type:'pillar'}], pots:[{x:155,y:390},{x:805,y:390,mystic:true}], plants:[{x:470,y:155,type:'max',id:'max-room-10'}], vines:[{x:330,y:70,length:170},{x:480,y:72,length:285},{x:635,y:70,length:205}], hazards:[{x:285,y:250,w:390,h:125,type:'spikes'}], enemies:[[165,165,'bow'],[420,185,'sword'],[565,180,'spear'],[805,170,'bow']] },
+      { name: '王の茨庭', obstacles: [{x:180,y:180,w:72,h:125,height:999,type:'pillar'},{x:708,y:180,w:72,h:125,height:999,type:'pillar'},{x:430,y:330,w:100,h:55,height:58,type:'crate'}], pots:[{x:150,y:390,mystic:true},{x:810,y:390}], plants:[{x:480,y:150,type:'heal'}], vines:[{x:285,y:72,length:225},{x:480,y:70,length:155},{x:675,y:72,length:260}], hazards:[{x:300,y:210,w:150,h:105,type:'spikes'},{x:510,y:210,w:150,h:105,type:'spikes'}], enemies:[[150,160,'sword'],[300,365,'bow'],[480,190,'spear'],[660,365,'bow'],[810,160,'sword']] },
       { name: '守護隊長の間', finalBoss:true, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
@@ -1048,22 +1051,42 @@
     }
   }
 
+  function enemyPositionUnsafe(x, y, radius) {
+    if (circleHitsAnyObstacle(x, y, radius, 0)) return true;
+    return hazards?.some((hazard) => hazard.type === 'spikes' && circleRectHit(x, y, radius + 8, hazard));
+  }
+
   function moveEnemyToward(e, tx, ty, speed, dt) {
     const dx = tx - e.x, dy = ty - e.y;
     const dist = Math.hypot(dx, dy);
     if (dist < 10) return true;
     e.angle = Math.atan2(dy, dx);
     const oldX = e.x, oldY = e.y;
-    e.x += dx / dist * speed * dt;
-    e.y += dy / dist * speed * dt;
-    if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) {
+    const step = speed * dt;
+    e.x += dx / dist * step;
+    e.y += dy / dist * step;
+    if (enemyPositionUnsafe(e.x, e.y, e.radius)) {
       e.x = oldX; e.y = oldY;
-      // 正面が塞がれたら左右へ回り込む。柱越しの直進停止を防ぐ。
-      const side = Math.sin(e.x * 0.031 + e.y * 0.017) > 0 ? 1 : -1;
-      const sideAngle = e.angle + side * Math.PI / 2;
-      e.x += Math.cos(sideAngle) * speed * 0.72 * dt;
-      e.y += Math.sin(sideAngle) * speed * 0.72 * dt;
-      if (circleHitsAnyObstacle(e.x, e.y, e.radius, 0)) { e.x = oldX; e.y = oldY; }
+      // 障害物とトゲ床の両方を壁として扱い、左右の安全な側へ回り込む。
+      const preferredSide = Math.sin(e.x * 0.031 + e.y * 0.017) > 0 ? 1 : -1;
+      let moved = false;
+      for (const side of [preferredSide, -preferredSide]) {
+        const sideAngle = e.angle + side * Math.PI / 2;
+        const nx = oldX + Math.cos(sideAngle) * step * 0.82;
+        const ny = oldY + Math.sin(sideAngle) * step * 0.82;
+        if (!enemyPositionUnsafe(nx, ny, e.radius)) {
+          e.x = nx; e.y = ny; moved = true; break;
+        }
+      }
+      if (!moved) {
+        // 角へ追い込まれた場合は、危険地帯から離れる方向を小さく探索する。
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4;
+          const nx = oldX + Math.cos(a) * step * 0.7;
+          const ny = oldY + Math.sin(a) * step * 0.7;
+          if (!enemyPositionUnsafe(nx, ny, e.radius)) { e.x = nx; e.y = ny; moved = true; break; }
+        }
+      }
     }
     e.x = clamp(e.x, ROOM.left + 30, ROOM.right - 30);
     e.y = clamp(e.y, ROOM.top + 30, ROOM.bottom - 30);
