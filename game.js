@@ -47,7 +47,7 @@
   let shake = 0;
   let currentRoomIndex = 0;
   let gameMode = 'title';
-  const TOTAL_ROOMS = 15;
+  const TOTAL_ROOMS = 18;
   const SAVE_KEY = 'slimesRevengeSaveV2';
   const LEGACY_SAVE_KEY = 'slimesRevengeSaveV1';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
@@ -78,15 +78,17 @@
       { name: '棘床の水路', obstacles: [{x:210,y:175,w:72,h:118,height:999,type:'pillar'},{x:678,y:175,w:72,h:118,height:999,type:'pillar'}], pots:[{x:145,y:405},{x:815,y:405,mystic:true}], plants:[{x:790,y:150,type:'max',id:'max-room-7'}], vines:[{x:480,y:76,length:285},{x:305,y:72,length:175},{x:655,y:72,length:215}], hazards:[{x:315,y:205,w:330,h:175,type:'spikes'}], enemies:[[165,150,'bow'],[795,150,'bow'],[480,170,'spear']] },
       { name: '守護門前', obstacles: [{x:295,y:190,w:76,h:132,height:999,type:'pillar'},{x:590,y:190,w:76,h:132,height:999,type:'pillar'},{x:430,y:330,w:100,h:58,height:60,type:'crate'}], pots:[{x:175,y:365,mystic:true},{x:785,y:365},{x:480,y:405}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:350,y:72,length:185},{x:580,y:72,length:265}], hazards:[{x:405,y:205,w:150,h:105,type:'spikes'}], enemies:[[160,160,'sword'],[320,350,'bow'],[480,190,'spear'],[640,350,'bow'],[800,160,'sword']] },
       { name: '茨の大広間', obstacles: [
-        {x:235,y:185,w:76,h:128,height:999,type:'pillar'}
-      ], pots:[{x:790,y:305,mystic:true},{x:180,y:390}], plants:[{x:205,y:145,type:'heal'}],
-      // 右半分を棘で満たし、水壺の周囲だけを安全地帯として残す。外枠は置かない。
+        {x:235,y:185,w:76,h:128,height:999,type:'pillar'},
+        // 右上の回復壺を守る木箱。上から跳び込めるが、地上からは回り込めない。
+        {x:742,y:116,w:52,h:142,height:58,type:'crate'},
+        {x:742,y:224,w:132,h:52,height:58,type:'crate'}
+      ], pots:[{x:830,y:175,mystic:true},{x:180,y:390}], plants:[{x:205,y:145,type:'heal'}],
+      // 回復壺は右上隅。中央寄りの2本のツタ、または精密なダッシュジャンプで狙う。
       vines:[{x:520,y:70,length:250},{x:665,y:72,length:205}],
       hazards:[
-        {x:498,y:118,w:374,h:124,type:'spikes'},
-        {x:498,y:242,w:212,h:180,type:'spikes'},
-        {x:710,y:242,w:162,h:16,type:'spikes'},
-        {x:710,y:365,w:162,h:57,type:'spikes'}
+        {x:498,y:118,w:244,h:304,type:'spikes'},
+        {x:794,y:276,w:78,h:146,type:'spikes'},
+        {x:742,y:276,w:52,h:146,type:'spikes'}
       ],
       enemies:[[175,180,'sword'],[350,345,'bow'],[420,175,'heavy']] },
       { name: '連環の吊り橋', obstacles: [{x:205,y:245,w:72,h:120,height:999,type:'pillar'},{x:700,y:175,w:72,h:120,height:999,type:'pillar'}], pots:[{x:155,y:390},{x:805,y:390,mystic:true}], plants:[{x:470,y:155,type:'max',id:'max-room-10'}], vines:[{x:330,y:70,length:170},{x:480,y:72,length:285},{x:635,y:70,length:205}], hazards:[{x:285,y:250,w:390,h:125,type:'spikes'}], enemies:[[165,165,'bow'],[420,185,'heavy'],[565,180,'spear'],[805,170,'bow']] },
@@ -94,6 +96,9 @@
       { name: '静かな蔓廊', obstacles: [{x:210,y:180,w:72,h:125,height:999,type:'pillar'},{x:682,y:270,w:72,h:125,height:999,type:'pillar'}], pots:[{x:155,y:390},{x:805,y:390,mystic:true}], plants:[{x:790,y:145,type:'heal'}], vines:[{x:345,y:72,length:155},{x:505,y:72,length:265},{x:650,y:72,length:195}], hazards:[{x:310,y:285,w:330,h:105,type:'spikes'}], enemies:[[165,165,'bow'],[415,185,'spear'],[600,180,'heavy'],[800,175,'bow']] },
       { name: '盾兵の訓練所', obstacles: [{x:285,y:215,w:78,h:128,height:999,type:'pillar'},{x:595,y:215,w:78,h:128,height:999,type:'pillar'},{x:430,y:355,w:100,h:55,height:58,type:'crate'}], pots:[{x:150,y:390,mystic:true},{x:810,y:390},{x:480,y:165}], plants:[{x:480,y:410,type:'max',id:'max-room-13'}], vines:[{x:480,y:72,length:175}], hazards:[], enemies:[[175,170,'heavy'],[370,175,'sword'],[590,175,'heavy'],[790,170,'spear']] },
       { name: '最後の茨橋', obstacles: [{x:175,y:190,w:70,h:122,height:999,type:'pillar'},{x:715,y:190,w:70,h:122,height:999,type:'pillar'}], pots:[{x:145,y:395},{x:815,y:395,mystic:true}], plants:[{x:480,y:150,type:'heal'}], vines:[{x:300,y:70,length:220},{x:480,y:70,length:290},{x:665,y:70,length:180}], hazards:[{x:250,y:235,w:180,h:155,type:'spikes'},{x:530,y:235,w:180,h:155,type:'spikes'}], enemies:[[155,160,'bow'],[335,180,'heavy'],[480,185,'spear'],[625,180,'heavy'],[805,160,'bow']] },
+      { name: '割れ橋の回廊', obstacles: [{x:185,y:180,w:70,h:122,height:999,type:'pillar'},{x:705,y:285,w:70,h:122,height:999,type:'pillar'},{x:430,y:340,w:100,h:54,height:58,type:'crate'}], pots:[{x:150,y:395},{x:810,y:155,mystic:true}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:315,y:70,length:165},{x:535,y:70,length:275},{x:720,y:70,length:185}], hazards:[{x:270,y:245,w:175,h:150,type:'spikes'},{x:515,y:245,w:175,h:150,type:'spikes'}], enemies:[[155,165,'bow'],[360,180,'heavy'],[600,180,'spear'],[805,345,'bow']] },
+      { name: '壺兵の関所', obstacles: [{x:250,y:205,w:76,h:126,height:999,type:'pillar'},{x:635,y:205,w:76,h:126,height:999,type:'pillar'},{x:430,y:270,w:100,h:55,height:58,type:'crate'}], pots:[{x:145,y:385},{x:300,y:385},{x:660,y:385},{x:815,y:385,mystic:true}], plants:[{x:480,y:145,type:'max',id:'max-room-17'}], vines:[{x:480,y:72,length:205}], hazards:[], enemies:[[170,170,'spear'],[350,175,'heavy'],[610,175,'spear'],[790,170,'bow']] },
+      { name: '最後の蔓庭', obstacles: [{x:205,y:190,w:72,h:125,height:999,type:'pillar'},{x:683,y:190,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[{x:480,y:155,type:'heal'}], vines:[{x:285,y:70,length:285},{x:480,y:70,length:155},{x:675,y:70,length:245}], hazards:[{x:300,y:220,w:145,h:185,type:'spikes'},{x:515,y:220,w:145,h:185,type:'spikes'}], enemies:[[155,165,'heavy'],[335,175,'bow'],[480,185,'spear'],[625,175,'bow'],[805,165,'heavy']] },
       { name: '守護隊長の間', finalBoss:true, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
