@@ -47,9 +47,9 @@
   let shake = 0;
   let currentRoomIndex = 0;
   let gameMode = 'title';
-  const TOTAL_ROOMS = 31;
-  const SAVE_KEY = 'slimesRevengeSaveV23';
-  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV22';
+  const TOTAL_ROOMS = 32;
+  const SAVE_KEY = 'slimesRevengeSaveV24';
+  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV23';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
 
   function makePlayer() {
@@ -113,8 +113,9 @@
       { name:'鎖と双刃の回廊', obstacles:[{x:190,y:205,w:72,h:125,height:999,type:'pillar'},{x:700,y:205,w:72,h:125,height:999,type:'pillar'},{x:430,y:335,w:100,h:55,height:58,type:'crate'}], pots:[{x:150,y:390,mystic:true},{x:810,y:390}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:480,y:72,length:225}], hazards:[{type:'wind',x:105,y:82,w:750,h:340,dirX:0,dirY:1,interval:5.2,duration:1.4,power:155}], enemies:[[240,180,'chainmob'],[480,195,'heavy'],[720,180,'dualmob']] },
       { name:'乱矢の前庭', obstacles:[{x:320,y:170,w:72,h:125,height:999,type:'pillar'},{x:570,y:290,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395},{x:815,y:395,mystic:true}], plants:[{x:790,y:145,type:'heal'}], vines:[{x:450,y:72,length:270},{x:700,y:72,length:165}], hazards:[{x:100,y:82,w:55,h:340,type:'spikes'},{type:'wind',x:155,y:82,w:717,h:340,dirX:-1,dirY:0,interval:4.3,duration:1.7,power:250},{type:'turret',x:850,y:120,dirX:-1,dirY:0,interval:1.85,delay:.1},{type:'turret',x:850,y:230,dirX:-1,dirY:0,interval:2.05,delay:.7},{type:'turret',x:850,y:355,dirX:-1,dirY:0,interval:2.25,delay:1.3}], enemies:[[260,180,'chainmob'],[520,190,'dualmob'],[760,320,'bow']] },
       { name:'泉へ続く射廊', obstacles:[{x:250,y:220,w:72,h:125,height:999,type:'pillar'},{x:635,y:220,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:350,y:72,length:210},{x:620,y:72,length:235}], hazards:[{type:'turret',x:850,y:125,dirX:-1,dirY:0,interval:1.7,delay:.1},{type:'turret',x:110,y:225,dirX:1,dirY:0,interval:1.95,delay:.6},{type:'turret',x:850,y:345,dirX:-1,dirY:0,interval:2.15,delay:1.1}], enemies:[[230,175,'dualmob'],[480,200,'heavy'],[730,175,'chainmob']] },
-      { name:'湧泉の乱弩王', checkpointBoss:true, bossLives:16, obstacles:[{x:250,y:190,w:72,h:125,height:999,type:'pillar'},{x:640,y:190,w:72,h:125,height:999,type:'pillar'}], pots:[{x:150,y:390},{x:810,y:390}], plants:[], vines:[{x:480,y:72,length:205}], hazards:[{type:'fountain',x:165,y:385,radius:48},{type:'wind',x:105,y:82,w:750,h:340,dirX:-1,dirY:0,interval:5.3,duration:1.25,power:180},{type:'turret',x:850,y:110,dirX:-1,dirY:0,interval:1.35,delay:.1},{type:'turret',x:850,y:210,dirX:-1,dirY:0,interval:1.55,delay:.5},{type:'turret',x:850,y:330,dirX:-1,dirY:0,interval:1.75,delay:.9},{type:'turret',x:110,y:150,dirX:1,dirY:0,interval:1.65,delay:.3},{type:'turret',x:110,y:285,dirX:1,dirY:0,interval:1.9,delay:1.0}], enemies:[[480,185,'crossbowboss']] },
-      { name:'古代炉心実験区', finalBoss:true, obstacles:[{x:205,y:185,w:72,h:125,height:999,type:'pillar'},{x:685,y:275,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[], vines:[{x:260,y:70,length:210},{x:430,y:70,length:275},{x:610,y:70,length:190},{x:770,y:70,length:250}], hazards:[{type:'heatfloor',x:ROOM.left+14,y:ROOM.top+14,w:ROOM.right-ROOM.left-28,h:ROOM.bottom-ROOM.top-28,interval:5.6,warningDuration:1.25,duration:2.35},{type:'turret',x:850,y:145,dirX:-1,dirY:0,interval:2.2,delay:.4},{type:'turret',x:110,y:335,dirX:1,dirY:0,interval:2.55,delay:1.2}], enemies:[[480,235,'robot']] },
+      { name:'湧泉の乱弩王', checkpointBoss:true, bossLives:16, obstacles:[{x:250,y:190,w:72,h:125,height:999,type:'pillar'},{x:640,y:190,w:72,h:125,height:999,type:'pillar'}], pots:[{x:150,y:390},{x:810,y:390}], plants:[], vines:[{x:480,y:72,length:205}], hazards:[{type:'wallfountain',x:ROOM.left+18,y:365,radius:48,side:'left'},{type:'wind',x:105,y:82,w:750,h:340,dirX:-1,dirY:0,interval:5.3,duration:1.25,power:180},{type:'turret',x:850,y:110,dirX:-1,dirY:0,interval:1.35,delay:.1},{type:'turret',x:850,y:210,dirX:-1,dirY:0,interval:1.55,delay:.5},{type:'turret',x:850,y:330,dirX:-1,dirY:0,interval:1.75,delay:.9},{type:'turret',x:110,y:150,dirX:1,dirY:0,interval:1.65,delay:.3},{type:'turret',x:110,y:285,dirX:1,dirY:0,interval:1.9,delay:1.0}], enemies:[[480,185,'crossbowboss']] },
+      { name:'古代炉心実験区', obstacles:[{x:205,y:185,w:72,h:125,height:999,type:'pillar'},{x:685,y:275,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[], vines:[{x:260,y:70,length:210},{x:430,y:70,length:275},{x:610,y:70,length:190},{x:770,y:70,length:250}], hazards:[{type:'heatfloor',x:ROOM.left+14,y:ROOM.top+14,w:ROOM.right-ROOM.left-28,h:ROOM.bottom-ROOM.top-28,interval:5.6,warningDuration:1.25,duration:2.35},{type:'turret',x:850,y:145,dirX:-1,dirY:0,interval:2.2,delay:.4},{type:'turret',x:110,y:335,dirX:1,dirY:0,interval:2.55,delay:1.2}], enemies:[[480,235,'robot']] },
+      { name:'紅蓮機関の玉座', finalBoss:true, bossLives:18, spawnX:135, spawnY:400, obstacles:[], pots:[{x:125,y:110,mystic:true},{x:835,y:110,mystic:true},{x:125,y:405,mystic:true},{x:835,y:405,mystic:true}], plants:[], vines:[{x:245,y:70,length:225},{x:390,y:70,length:285},{x:570,y:70,length:245},{x:720,y:70,length:300}], hazards:[{type:'heatfloor',x:ROOM.left+8,y:ROOM.top+8,w:ROOM.right-ROOM.left-16,h:ROOM.bottom-ROOM.top-16,alwaysActive:true,safeZones:[{x:82,y:76,w:112,h:92},{x:766,y:76,w:112,h:92},{x:82,y:350,w:112,h:92},{x:766,y:350,w:112,h:92}]},{type:'spikes',x:ROOM.left+8,y:ROOM.top+190,w:ROOM.right-ROOM.left-16,h:38}], enemies:[[275,210,'carrier'],[480,330,'carrier'],[700,205,'carrier'],[480,205,'slimecannon']] },
     ];
     return rooms[index];
   }
@@ -126,6 +127,8 @@
     player = makePlayer();
     player.hp = clamp(runStats.hp, 1, runStats.maxHp);
     player.maxHp = runStats.maxHp;
+    if (Number.isFinite(data.spawnX)) player.x = data.spawnX;
+    if (Number.isFinite(data.spawnY)) player.y = data.spawnY;
     obstacles = data.obstacles.map(o => ({...o}));
     pots = data.pots.map(o => ({...o, radius:28, broken:false, shake:0, rolling:false, rollSpeed:0, used:false}));
     plants = (data.plants || []).map(o => ({...o, fruitReady:false, fruitX:null, fruitY:null, consumed:o.type === 'max' && runStats.maxFruitTaken.includes(o.id), pulse:Math.random()*6.28}));
@@ -170,11 +173,12 @@
   function resetGame() { if (gameMode === 'playing') loadRoom(currentRoomIndex, false); else showTitle(); }
 
   function makeEnemy(x, y, weapon = 'sword') {
-    const bossType = weapon === 'chainboss' ? 'chain' : (weapon === 'dualboss' ? 'dual' : (weapon === 'crossbowboss' ? 'crossbow' : (weapon === 'boss' ? 'guard' : null)));
+    const bossType = weapon === 'chainboss' ? 'chain' : (weapon === 'dualboss' ? 'dual' : (weapon === 'crossbowboss' ? 'crossbow' : (weapon === 'slimecannon' ? 'slimecannon' : (weapon === 'boss' ? 'guard' : null))));
     const isBoss = bossType !== null;
     const isChainMinion = weapon === 'chainmob';
     const isDualMinion = weapon === 'dualmob';
-    const isRobot = weapon === 'robot';
+    const isRobot = weapon === 'robot' || weapon === 'carrier';
+    const passiveRobot = weapon === 'carrier';
     if (weapon === 'boss') weapon = 'sword';
     const isHeavy = weapon === 'heavy';
     const patrolRadius = isBoss ? 90 : (weapon === 'spear' ? 115 : (weapon === 'bow' ? 165 : (isHeavy ? 105 : 145)));
@@ -186,6 +190,7 @@
       isChainMinion,
       isDualMinion,
       isRobot,
+      passiveRobot,
       helmetOn: isHeavy,
       shieldOn: isHeavy,
       isBoss,
@@ -196,7 +201,7 @@
       state: 'walk', // walk, tripped, stunned（既存戦闘状態）
       stateTimer: 0,
       angle: Math.random() * Math.PI * 2,
-      speed: isBoss ? (bossType === 'dual' ? 116 : (bossType === 'chain' ? 88 : (bossType === 'crossbow' ? 76 : 96))) : (isRobot ? 82 : (isDualMinion ? 92 : (isChainMinion ? 70 : (weapon === 'bow' ? 72 : (isHeavy ? 46 : 58 + Math.random() * 18))))),
+      speed: isBoss ? (bossType === 'dual' ? 116 : (bossType === 'chain' ? 88 : (bossType === 'crossbow' ? 76 : (bossType === 'slimecannon' ? 72 : 96)))) : (isRobot ? 82 : (isDualMinion ? 92 : (isChainMinion ? 70 : (weapon === 'bow' ? 72 : (isHeavy ? 46 : 58 + Math.random() * 18))))),
       faceCooldown: 0,
       weapon,
       attackState: 'idle', // idle, windup, active, recover
@@ -628,7 +633,7 @@
         }
       } else {
         gameMode = 'complete';
-        messageEl.textContent = '古代炉心実験区を突破した！ Slime’s Revenge v2.3 クリア！';
+        messageEl.textContent = '紅蓮機関のスライムを倒した！ Slime’s Revenge v2.4 クリア！';
         try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
       }
     }
@@ -714,7 +719,7 @@
     if (e.isBoss && e.bossLives > 1) {
       e.bossLives--; e.state = 'tripped'; e.stateTimer = 1.35; e.attackState = 'idle';
       e.speed += 18; e.visionRange += 20; shake = Math.max(shake, 12); burst(e.x,e.y,28);
-      messageEl.textContent = `${e.bossType === 'chain' ? '鎖刃の番人' : (e.bossType === 'dual' ? '双刃の剣士' : (e.bossType === 'crossbow' ? '乱弩王' : 'ボス'))}の装甲を破った！ 残り${e.bossLives}段階`;
+      messageEl.textContent = `${e.bossType === 'chain' ? '鎖刃の番人' : (e.bossType === 'dual' ? '双刃の剣士' : (e.bossType === 'crossbow' ? '乱弩王' : (e.bossType === 'slimecannon' ? '紅蓮機関のスライム' : 'ボス')))}の装甲を破った！ 残り${e.bossLives}段階`;
       return false;
     }
     e.state = 'stunned'; e.stateTimer = 999; burst(e.x,e.y,e.isBoss ? 42 : 16);
@@ -722,7 +727,7 @@
   }
 
   function checkDoorOpen() {
-    if (!doorOpen && enemies.every((e) => e.state === 'stunned')) {
+    if (!doorOpen && enemies.every((e) => e.passiveRobot || e.state === 'stunned')) {
       doorOpen = true;
       const fruit = plants.some(p => p.fruitReady && !p.consumed);
       messageEl.textContent = fruit ? '敵を全員倒した！ 植物に実がなった。くっつきで吸収できる！' : '扉が開いた！ 上の出口へ！';
@@ -969,6 +974,7 @@
     }
     if (e.bossType === 'dual') { updateDualBossCombat(e, dt, targetX, targetY, dist); return; }
     if (e.bossType === 'crossbow') { updateCrossbowBossCombat(e, dt, targetX, targetY, dist); return; }
+    if (e.bossType === 'slimecannon') { updateSlimeCannonBossCombat(e, dt, targetX, targetY, dist); return; }
     if (e.isChainMinion) { updateChainMinionCombat(e, dt, targetX, targetY, dist); return; }
     if (e.isDualMinion) { updateDualMinionCombat(e, dt, targetX, targetY, dist); return; }
     if (e.weapon === 'bow') {
@@ -1024,6 +1030,7 @@
     if (moveEnemyToward(e, target.x, target.y, e.speed * 0.82, dt)) {
       e.patrolIndex = (e.patrolIndex + 1) % e.patrolPoints.length;
     }
+    if (e.passiveRobot) return;
     if (e.attackTimer <= 0) {
       e.attackTimer = 0.9;
       const base = e.angle;
@@ -1096,6 +1103,24 @@
     }
     if (dist > 92) moveEnemyToward(e, targetX, targetY, e.speed * 1.18, dt);
     if (dist < 155 && e.attackTimer <= 0 && !player.hiddenPot) { e.attackState = 'windup'; e.attackTimer = 0.52; }
+  }
+
+  function updateSlimeCannonBossCombat(e, dt, targetX, targetY, dist) {
+    e.attackTimer -= dt;
+    e.angle = Math.atan2(targetY - e.y, targetX - e.x);
+    // 兵器に乗った色違いスライム。距離を保ち、回避可能な緩い追尾ミサイルを撃つ。
+    if (dist < 190) moveEnemyAwayFrom(e, targetX, targetY, e.speed * 0.72, dt);
+    else if (dist > 330) moveEnemyToward(e, targetX, targetY, e.speed * 0.55, dt);
+    if (e.attackTimer <= 0) {
+      e.attackTimer = Math.max(0.62, 1.12 - (18 - Math.min(18, e.bossLives)) * 0.025);
+      const base = Math.atan2(player.y - e.y, player.x - e.x);
+      for (const spread of [-0.12, 0.12]) {
+        const a = base + spread;
+        arrows.push({x:e.x+Math.cos(a)*48,y:e.y+Math.sin(a)*48,vx:Math.cos(a)*245,vy:Math.sin(a)*245,angle:a,radius:11,life:4.2,owner:e,missile:true,bossBolt:true,turnRate:1.05});
+      }
+      burst(e.x + Math.cos(base) * 40, e.y + Math.sin(base) * 40, 12);
+      shake = Math.max(shake, 4);
+    }
   }
 
   function updateChainMinionCombat(e, dt, targetX, targetY, dist) {
@@ -1222,6 +1247,14 @@
     for (const arrow of arrows) {
       if (arrow.dead) continue;
       arrow.life -= dt;
+      if (arrow.missile && !player.hiddenPot) {
+        const desired = Math.atan2(player.y - arrow.y, player.x - arrow.x);
+        let diff = Math.atan2(Math.sin(desired - arrow.angle), Math.cos(desired - arrow.angle));
+        diff = clamp(diff, -(arrow.turnRate||1)*dt, (arrow.turnRate||1)*dt);
+        arrow.angle += diff;
+        const speed = Math.hypot(arrow.vx, arrow.vy);
+        arrow.vx = Math.cos(arrow.angle) * speed; arrow.vy = Math.sin(arrow.angle) * speed;
+      }
       const steps = Math.max(1, Math.ceil(Math.hypot(arrow.vx, arrow.vy) * dt / 12));
       for (let i=0; i<steps && !arrow.dead; i++) {
         arrow.x += arrow.vx * dt / steps;
@@ -1241,7 +1274,7 @@
         if (!player.hiddenPot && player.z < 38 && player.invuln <= 0 && player.hurtTimer <= 0 && Math.hypot(player.x-arrow.x, player.y-arrow.y) < player.radius + arrow.radius) {
           arrow.dead = true;
           const arrowDamage = arrow.bossBolt ? 2 : 1;
-          damagePlayer(arrowDamage, arrow.bossBolt ? '乱弩王の強弩！ HPが2減った' : (arrow.robotBolt ? '自動攻撃ロボの連射！ HPが1減った' : '矢に射抜かれた！ HPが1減った'));
+          damagePlayer(arrowDamage, arrow.missile ? '追尾ミサイルが爆発！ HPが2減った' : (arrow.bossBolt ? '乱弩王の強弩！ HPが2減った' : (arrow.robotBolt ? '自動攻撃ロボの連射！ HPが1減った' : '矢に射抜かれた！ HPが1減った')));
           player.x += Math.cos(arrow.angle) * 30;
           player.y += Math.sin(arrow.angle) * 30;
           shake = 5; burst(player.x, player.y, 9);
@@ -1463,7 +1496,7 @@
   }
 
   function updatePlants(dt) {
-    const allDefeated = enemies.every(e => e.state === 'stunned');
+    const allDefeated = enemies.every(e => e.passiveRobot || e.state === 'stunned');
     for (const plant of plants) {
       plant.pulse += dt * 3;
       if (allDefeated && !plant.consumed && !plant.fruitReady) {
@@ -1599,7 +1632,7 @@
         continue;
       }
 
-      if (input.stickPressed && p.z > 28 && dist < 48 && e.faceCooldown <= 0 && e.state !== 'stunned') {
+      if (input.stickPressed && p.z > 28 && dist < 48 && e.faceCooldown <= 0 && e.state !== 'stunned' && e.bossType !== 'slimecannon') {
         p.attachedEnemy = e;
         p.attachTimer = 0;
         e.faceCooldown = 0.5;
@@ -1636,6 +1669,11 @@
         if (e.isBoss) {
           // 急降下は一度の着地につき装甲1段階だけを破る。HPを直接削って装甲を飛ばさない。
           stunEnemy(e);
+          if (e.bossType === 'slimecannon') {
+            const dx = player.x - e.x, dy = player.y - e.y, len = Math.hypot(dx,dy)||1;
+            player.x += dx/len*72; player.y += dy/len*72; player.vz = 520;
+            messageEl.textContent = '兵器へ急降下！ 大きな反動で弾き飛ばされた！'; shake=12;
+          }
           if (e.state !== 'stunned') { e.state='tripped'; e.stateTimer=1.45; }
         } else if (e.isRobot) {
           e.hp -= 1;
@@ -1696,7 +1734,7 @@
             player.y += (hazard.dirY || 0) * (hazard.power || 220) * dt * scale;
           }
         }
-      } else if (hazard.type === 'fountain') {
+      } else if (hazard.type === 'fountain' || hazard.type === 'wallfountain') {
         const d=Math.hypot(player.x-hazard.x,player.y-hazard.y);
         hazard.healCooldown=Math.max(0,(hazard.healCooldown||0)-dt);
         if(d<(hazard.radius||52)+player.radius*.45 && hazard.healCooldown<=0){
@@ -1707,21 +1745,20 @@
         hazard.timer += dt;
         const interval = hazard.interval || 5.5;
         const warningDuration = hazard.warningDuration || 1.2;
-        hazard.warning = !hazard.active && hazard.timer >= interval - warningDuration;
-        if (!hazard.active && hazard.timer >= interval) {
-          hazard.active = true;
-          hazard.warning = false;
-          hazard.activeTimer = hazard.duration || 2.2;
-          hazard.timer = 0;
-          messageEl.textContent = '古代兵器が起動！ 床全体が灼熱化する！';
-          shake = Math.max(shake, 7);
+        if (hazard.alwaysActive) { hazard.active = true; hazard.warning = false; }
+        else {
+          hazard.warning = !hazard.active && hazard.timer >= interval - warningDuration;
+          if (!hazard.active && hazard.timer >= interval) {
+            hazard.active = true; hazard.warning = false; hazard.activeTimer = hazard.duration || 2.2; hazard.timer = 0;
+            messageEl.textContent = '古代兵器が起動！ 床全体が灼熱化する！'; shake = Math.max(shake, 7);
+          }
         }
         if (hazard.active) {
-          hazard.activeTimer -= dt;
-          if (hazard.activeTimer <= 0) { hazard.active = false; hazard.timer = 0; messageEl.textContent = '灼熱床が冷却された'; }
+          if (!hazard.alwaysActive) { hazard.activeTimer -= dt; if (hazard.activeTimer <= 0) { hazard.active = false; hazard.timer = 0; messageEl.textContent = '灼熱床が冷却された'; } }
           const ridingRobot = player.attachedEnemy?.isRobot;
           const onFloor = player.x>hazard.x && player.x<hazard.x+hazard.w && player.y>hazard.y && player.y<hazard.y+hazard.h;
-          if (onFloor && !player.hiddenPot && !player.vineAttached && !ridingRobot && player.z < 22 && player.invuln <= 0) {
+          const inSafeZone = (hazard.safeZones||[]).some(z => player.x>z.x && player.x<z.x+z.w && player.y>z.y && player.y<z.y+z.h);
+          if (onFloor && !inSafeZone && !player.hiddenPot && !player.vineAttached && !ridingRobot && player.z < 22 && player.invuln <= 0) {
             damagePlayer(1, '灼熱床！ ツタかロボの頭へ避難せよ');
             player.vz = Math.max(player.vz, 240);
           }
@@ -1890,7 +1927,17 @@
       ctx.globalAlpha = hazard.active ? 0.65 : 0.32;
       ctx.strokeStyle='#ffd36a';ctx.lineWidth=4;
       for(let y=hazard.y+18;y<hazard.y+hazard.h;y+=46){ctx.beginPath();ctx.moveTo(hazard.x+10,y);ctx.lineTo(hazard.x+hazard.w-10,y+Math.sin(y*.08+hazard.pulse)*10);ctx.stroke();}
+      if (hazard.safeZones) { ctx.globalAlpha=1; ctx.fillStyle='#cdbd88'; ctx.strokeStyle='#6f654f'; ctx.lineWidth=3; for(const z of hazard.safeZones){ctx.fillRect(z.x,z.y,z.w,z.h);ctx.strokeRect(z.x,z.y,z.w,z.h);} }
       ctx.restore(); return;
+    }
+    if (hazard.type === 'wallfountain') {
+      ctx.save(); ctx.translate(hazard.x,hazard.y);
+      const r=hazard.radius||48; ctx.globalAlpha=.25; ctx.fillStyle='#74efff'; ctx.beginPath();ctx.ellipse(20,20,r+18,r*.55,0,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;ctx.strokeStyle='#11151d';ctx.lineWidth=7;ctx.fillStyle='#4b5660';ctx.beginPath();ctx.arc(0,-28,24,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#65e9ff';ctx.beginPath();ctx.moveTo(-12,-18);ctx.quadraticCurveTo(4,5,18,12);ctx.quadraticCurveTo(5,28,-8,17);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#38cfe8';ctx.beginPath();ctx.ellipse(18,18,r,r*.4,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+      for(let i=0;i<6;i++){const a=hazard.pulse+i;ctx.fillStyle='#baffff';ctx.beginPath();ctx.arc(10+Math.cos(a)*22,-2+Math.sin(a*1.4)*22,3.5,0,Math.PI*2);ctx.fill();}
+      ctx.restore();return;
     }
     if (hazard.type === 'fountain') {
       ctx.save();ctx.translate(hazard.x,hazard.y);
@@ -2120,6 +2167,13 @@
     ctx.save();
     ctx.translate(arrow.x, arrow.y);
     ctx.rotate(arrow.angle);
+    if (arrow.missile) {
+      ctx.fillStyle='#4a3a55';ctx.strokeStyle='#0a0d12';ctx.lineWidth=5;
+      ctx.beginPath();ctx.roundRect(-18,-9,34,18,8);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#ffcb54';ctx.beginPath();ctx.moveTo(-18,-7);ctx.lineTo(-31,0);ctx.lineTo(-18,7);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle='#e5eff4';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(12,-9);ctx.lineTo(12,9);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.restore();return;
+    }
     ctx.strokeStyle='#0a0d12'; ctx.lineWidth=6; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(17,0); ctx.stroke();
     ctx.strokeStyle='#b57a42'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(13,0); ctx.stroke();
@@ -2174,11 +2228,19 @@
     if (e.isRobot) {
       ctx.strokeStyle='#0a0d12';ctx.lineWidth=7;
       if(e.state==='stunned'){ctx.rotate(.22);ctx.fillStyle='#4e5d66';ctx.beginPath();ctx.roundRect(-28,-12,56,34,10);ctx.fill();ctx.stroke();ctx.fillStyle='#ffbf4d';ctx.fillText('×',0,-22);ctx.restore();return;}
-      ctx.fillStyle='#687984';ctx.beginPath();ctx.roundRect(-27,-8,54,43,11);ctx.fill();ctx.stroke();
+      ctx.fillStyle=e.passiveRobot?'#78956f':'#687984';ctx.beginPath();ctx.roundRect(-27,-8,54,43,11);ctx.fill();ctx.stroke();
       ctx.fillStyle='#91a9b5';ctx.beginPath();ctx.arc(0,-20,23,0,Math.PI*2);ctx.fill();ctx.stroke();
       ctx.fillStyle='#52e7ff';ctx.beginPath();ctx.roundRect(-14,-25,28,10,5);ctx.fill();ctx.stroke();
-      ctx.save();ctx.rotate(e.angle||0);ctx.translate(29,5);ctx.fillStyle='#2e3840';ctx.fillRect(0,-7,30,14);ctx.strokeRect(0,-7,30,14);ctx.restore();
+      if(!e.passiveRobot){ctx.save();ctx.rotate(e.angle||0);ctx.translate(29,5);ctx.fillStyle='#2e3840';ctx.fillRect(0,-7,30,14);ctx.strokeRect(0,-7,30,14);ctx.restore();}
       if(player.attachedEnemy===e){ctx.fillStyle='#5ee4cf';ctx.beginPath();ctx.ellipse(0,-39,24,21,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#10141b';ctx.beginPath();ctx.arc(-7,-43,3,0,Math.PI*2);ctx.arc(7,-43,3,0,Math.PI*2);ctx.fill();}
+      ctx.restore();return;
+    }
+    if (e.bossType === 'slimecannon') {
+      ctx.strokeStyle='#0a0d12';ctx.lineWidth=7;ctx.fillStyle='#4a354f';ctx.beginPath();ctx.roundRect(-46,-4,92,54,16);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#8e54a3';ctx.beginPath();ctx.arc(0,-22,32,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#ff65b8';ctx.beginPath();ctx.ellipse(0,-30,23,20,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-8,-34,5,0,Math.PI*2);ctx.arc(8,-34,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(-7,-33,2,0,Math.PI*2);ctx.arc(9,-33,2,0,Math.PI*2);ctx.fill();
+      ctx.save();ctx.rotate(e.angle||0);ctx.fillStyle='#2c3039';ctx.fillRect(28,-14,38,12);ctx.fillRect(28,8,38,12);ctx.restore();
       ctx.restore();return;
     }
     if (e.isBoss) { ctx.scale(1.32, 1.32); ctx.fillStyle='#f4cf55'; ctx.strokeStyle='#0a0d12'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-18,-40); ctx.lineTo(-11,-57); ctx.lineTo(0,-43); ctx.lineTo(11,-57); ctx.lineTo(18,-40); ctx.closePath(); ctx.fill(); ctx.stroke(); }
