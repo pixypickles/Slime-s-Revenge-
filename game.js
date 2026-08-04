@@ -47,8 +47,8 @@
   let shake = 0;
   let currentRoomIndex = 0;
   let gameMode = 'title';
-  const TOTAL_ROOMS = 20;
-  const SAVE_KEY = 'slimesRevengeSaveV2';
+  const TOTAL_ROOMS = 24;
+  const SAVE_KEY = 'slimesRevengeSaveV21';
   const LEGACY_SAVE_KEY = 'slimesRevengeSaveV1';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
 
@@ -103,7 +103,11 @@
       { name: '壺兵の関所', obstacles: [{x:250,y:205,w:76,h:126,height:999,type:'pillar'},{x:635,y:205,w:76,h:126,height:999,type:'pillar'},{x:430,y:270,w:100,h:55,height:58,type:'crate'}], pots:[{x:145,y:385},{x:300,y:385},{x:660,y:385},{x:815,y:385,mystic:true}], plants:[{x:480,y:145,type:'max',id:'max-room-17'}], vines:[{x:480,y:72,length:205}], hazards:[], enemies:[[170,170,'spear'],[350,175,'heavy'],[610,175,'spear'],[790,170,'bow']] },
       { name: '最後の蔓庭', obstacles: [{x:205,y:190,w:72,h:125,height:999,type:'pillar'},{x:683,y:190,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[{x:480,y:155,type:'heal'}], vines:[{x:285,y:70,length:285},{x:480,y:70,length:155},{x:675,y:70,length:245}], hazards:[{x:300,y:220,w:145,h:185,type:'spikes'},{x:515,y:220,w:145,h:185,type:'spikes'}], enemies:[[155,165,'heavy'],[335,175,'bow'],[480,185,'spear'],[625,175,'bow'],[805,165,'heavy']] },
       { name: '風矢の回廊', obstacles: [{x:330,y:185,w:72,h:125,height:999,type:'pillar'},{x:620,y:275,w:72,h:125,height:999,type:'pillar'}], pots:[{x:190,y:390,mystic:true},{x:780,y:390}], plants:[{x:790,y:145,type:'heal'}], vines:[{x:500,y:72,length:245}], hazards:[{x:100,y:82,w:58,h:340,type:'spikes'},{type:'wind',x:155,y:82,w:717,h:340,dirX:-1,dirY:0,interval:5.2,duration:2.0,power:235},{type:'turret',x:850,y:155,dirX:-1,dirY:0,interval:2.25,delay:0.5},{type:'turret',x:850,y:330,dirX:-1,dirY:0,interval:2.8,delay:1.4}], enemies:[[260,170,'bow'],[515,185,'heavy'],[750,250,'spear']] },
-      { name: '守護隊長の間', finalBoss:true, bossLives:7, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[{type:'turret',x:840,y:150,dirX:-1,dirY:0,interval:3.1,delay:0.8},{type:'turret',x:120,y:340,dirX:1,dirY:0,interval:3.6,delay:2.0}], enemies:[[480,205,'boss']] },
+      { name: '二十の守護門', checkpointBoss:true, bossLives:7, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[{type:'turret',x:840,y:150,dirX:-1,dirY:0,interval:3.1,delay:0.8},{type:'turret',x:120,y:340,dirX:1,dirY:0,interval:3.6,delay:2.0}], enemies:[[480,205,'boss']] },
+      { name: '逆風の射廊', obstacles:[{x:270,y:180,w:72,h:126,height:999,type:'pillar'},{x:610,y:285,w:72,h:126,height:999,type:'pillar'}], pots:[{x:155,y:390,mystic:true},{x:810,y:390}], plants:[{x:790,y:145,type:'heal'}], vines:[{x:420,y:72,length:230},{x:690,y:72,length:170}], hazards:[{x:100,y:82,w:55,h:340,type:'spikes'},{type:'wind',x:155,y:82,w:717,h:340,dirX:-1,dirY:0,interval:4.6,duration:1.8,power:255},{type:'turret',x:850,y:135,dirX:-1,dirY:0,interval:2.1,delay:0.2},{type:'turret',x:850,y:255,dirX:-1,dirY:0,interval:2.55,delay:1.0},{type:'turret',x:850,y:375,dirX:-1,dirY:0,interval:3.0,delay:1.8}], enemies:[[220,170,'bow'],[500,190,'heavy'],[760,300,'spear']] },
+      { name: '鎖刃の番人', bossLives:6, obstacles:[{x:225,y:240,w:72,h:125,height:999,type:'pillar'},{x:665,y:240,w:72,h:125,height:999,type:'pillar'}], pots:[{x:150,y:395,mystic:true},{x:810,y:395,mystic:true}], plants:[{x:480,y:400,type:'heal'}], vines:[{x:480,y:72,length:210}], hazards:[{type:'wind',x:105,y:85,w:750,h:330,dirX:0,dirY:1,interval:6.2,duration:1.35,power:145}], enemies:[[480,210,'chainboss']] },
+      { name: '交差矢の風庭', obstacles:[{x:360,y:170,w:72,h:122,height:999,type:'pillar'},{x:545,y:300,w:72,h:122,height:999,type:'pillar'},{x:730,y:170,w:72,h:122,height:999,type:'pillar'}], pots:[{x:145,y:390},{x:815,y:390,mystic:true}], plants:[{x:480,y:145,type:'max',id:'max-room-23'}], vines:[{x:285,y:72,length:185},{x:520,y:72,length:270},{x:735,y:72,length:190}], hazards:[{x:100,y:82,w:55,h:340,type:'spikes'},{type:'wind',x:155,y:82,w:717,h:340,dirX:-1,dirY:0,interval:5.0,duration:1.7,power:220},{type:'turret',x:850,y:125,dirX:-1,dirY:0,interval:2.15,delay:0.25},{type:'turret',x:850,y:350,dirX:-1,dirY:0,interval:2.65,delay:1.3},{type:'turret',x:120,y:235,dirX:1,dirY:0,interval:3.15,delay:0.8}], enemies:[[230,175,'bow'],[470,190,'heavy'],[690,185,'bow'],[790,330,'spear']] },
+      { name: '双刃旋舞の間', finalBoss:true, bossLives:9, obstacles:[{x:190,y:210,w:72,h:120,height:999,type:'pillar'},{x:700,y:210,w:72,h:120,height:999,type:'pillar'}], pots:[{x:150,y:390,mystic:true},{x:810,y:390,mystic:true}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:315,y:72,length:185},{x:645,y:72,length:185}], hazards:[{type:'wind',x:105,y:82,w:750,h:340,dirX:-1,dirY:0,interval:6.0,duration:1.45,power:175},{type:'turret',x:850,y:145,dirX:-1,dirY:0,interval:3.0,delay:0.4},{type:'turret',x:110,y:340,dirX:1,dirY:0,interval:3.4,delay:1.8}], enemies:[[480,220,'dualboss']] },
     ];
     return rooms[index];
   }
@@ -159,8 +163,9 @@
   function resetGame() { if (gameMode === 'playing') loadRoom(currentRoomIndex, false); else showTitle(); }
 
   function makeEnemy(x, y, weapon = 'sword') {
-    const isBoss = weapon === 'boss';
-    if (isBoss) weapon = 'sword';
+    const bossType = weapon === 'chainboss' ? 'chain' : (weapon === 'dualboss' ? 'dual' : (weapon === 'boss' ? 'guard' : null));
+    const isBoss = bossType !== null;
+    if (weapon === 'boss') weapon = 'sword';
     const isHeavy = weapon === 'heavy';
     const patrolRadius = isBoss ? 90 : (weapon === 'spear' ? 115 : (weapon === 'bow' ? 165 : (isHeavy ? 105 : 145)));
     return {
@@ -171,11 +176,14 @@
       helmetOn: isHeavy,
       shieldOn: isHeavy,
       isBoss,
+      bossType,
       bossLives: isBoss ? 3 : 1,
+      specialAngle: 0,
+      specialHitCooldown: 0,
       state: 'walk', // walk, tripped, stunned（既存戦闘状態）
       stateTimer: 0,
       angle: Math.random() * Math.PI * 2,
-      speed: isBoss ? 92 : (weapon === 'bow' ? 72 : (isHeavy ? 46 : 58 + Math.random() * 18)),
+      speed: isBoss ? (bossType === 'dual' ? 110 : (bossType === 'chain' ? 82 : 92)) : (weapon === 'bow' ? 72 : (isHeavy ? 46 : 58 + Math.random() * 18)),
       faceCooldown: 0,
       weapon,
       attackState: 'idle', // idle, windup, active, recover
@@ -186,7 +194,7 @@
 
       // v0.9 敵AI。戦闘状態とは分離し、既存の転倒・気絶処理を維持する。
       aiState: 'patrol', // patrol, chase, search, investigatePot
-      visionRange: isBoss ? 380 : (weapon === 'spear' ? 300 : (weapon === 'bow' ? 390 : (isHeavy ? 255 : 270))),
+      visionRange: isBoss ? 410 : (weapon === 'spear' ? 300 : (weapon === 'bow' ? 390 : (isHeavy ? 255 : 270))),
       visionHalfAngle: weapon === 'spear' ? 0.62 : (weapon === 'bow' ? 0.72 : 0.78),
       alert: 0,
       lostSightTimer: 0,
@@ -605,7 +613,7 @@
         }
       } else {
         gameMode = 'complete';
-        messageEl.textContent = '守護隊長を倒した！ Slime’s Revenge クリア！';
+        messageEl.textContent = '双刃の剣士を倒した！ Slime’s Revenge クリア！';
         try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
       }
     }
@@ -691,7 +699,7 @@
     if (e.isBoss && e.bossLives > 1) {
       e.bossLives--; e.state = 'tripped'; e.stateTimer = 1.35; e.attackState = 'idle';
       e.speed += 18; e.visionRange += 20; shake = Math.max(shake, 12); burst(e.x,e.y,28);
-      messageEl.textContent = `ボスの装甲を破った！ 残り${e.bossLives}段階`;
+      messageEl.textContent = `${e.bossType === 'chain' ? '鎖刃の番人' : (e.bossType === 'dual' ? '双刃の剣士' : 'ボス')}の装甲を破った！ 残り${e.bossLives}段階`;
       return false;
     }
     e.state = 'stunned'; e.stateTimer = 999; burst(e.x,e.y,e.isBoss ? 42 : 16);
@@ -932,6 +940,14 @@
     const dy = targetY - e.y;
     const dist = Math.hypot(dx, dy);
 
+    if (e.bossType === 'chain') {
+      updateChainBossCombat(e, dt, targetX, targetY, dist);
+      return;
+    }
+    if (e.bossType === 'dual') {
+      updateDualBossCombat(e, dt, targetX, targetY, dist);
+      return;
+    }
     if (e.weapon === 'bow') {
       updateArcherCombat(e, dt, targetX, targetY, dist);
       return;
@@ -969,6 +985,76 @@
       return;
     }
     moveEnemyToward(e, targetX, targetY, e.speed * 1.12, dt);
+  }
+
+  function pointSegmentDistance(px, py, ax, ay, bx, by) {
+    const abx = bx - ax, aby = by - ay;
+    const len2 = abx * abx + aby * aby || 1;
+    const t = clamp(((px - ax) * abx + (py - ay) * aby) / len2, 0, 1);
+    return Math.hypot(px - (ax + abx * t), py - (ay + aby * t));
+  }
+
+  function updateChainBossCombat(e, dt, targetX, targetY, dist) {
+    e.specialHitCooldown = Math.max(0, e.specialHitCooldown - dt);
+    const dx = targetX - e.x, dy = targetY - e.y;
+    e.angle = Math.atan2(dy, dx);
+    e.attackTimer -= dt;
+    if (e.attackState === 'windup') {
+      e.attackAngle = Math.atan2(player.y - e.y, player.x - e.x);
+      if (e.attackTimer <= 0) { e.attackState = 'active'; e.attackTimer = 1.45; e.specialAngle = e.attackAngle; e.attackHit = false; shake = 7; }
+      return;
+    }
+    if (e.attackState === 'active') {
+      e.specialAngle += dt * (7.1 + (6 - Math.min(6, e.bossLives)) * 0.35);
+      const length = 142;
+      const bx = e.x + Math.cos(e.specialAngle) * length;
+      const by = e.y + Math.sin(e.specialAngle) * length;
+      if (!player.hiddenPot && player.z < 48 && e.specialHitCooldown <= 0 && pointSegmentDistance(player.x, player.y, e.x, e.y, bx, by) < player.radius + 13) {
+        if (damagePlayer(2, '鎖鎌の旋回攻撃！ HPが2減った')) {
+          e.specialHitCooldown = 0.7;
+          const d = Math.hypot(player.x - e.x, player.y - e.y) || 1;
+          player.x += (player.x - e.x) / d * 42; player.y += (player.y - e.y) / d * 42; shake = 9;
+        }
+      }
+      if (e.attackTimer <= 0) { e.attackState = 'recover'; e.attackTimer = 0.82; }
+      return;
+    }
+    if (e.attackState === 'recover') {
+      if (e.attackTimer <= 0) { e.attackState = 'idle'; e.attackTimer = 0.45; }
+      return;
+    }
+    if (dist < 115) moveEnemyAwayFrom(e, targetX, targetY, e.speed * 0.9, dt);
+    else if (dist > 225) moveEnemyToward(e, targetX, targetY, e.speed, dt);
+    else if (e.attackTimer <= 0 && !player.hiddenPot) { e.attackState = 'windup'; e.attackTimer = 0.72; e.attackAngle = Math.atan2(dy, dx); }
+  }
+
+  function updateDualBossCombat(e, dt, targetX, targetY, dist) {
+    e.specialHitCooldown = Math.max(0, e.specialHitCooldown - dt);
+    const dx = targetX - e.x, dy = targetY - e.y;
+    e.angle = Math.atan2(dy, dx);
+    e.attackTimer -= dt;
+    if (e.attackState === 'windup') {
+      if (e.attackTimer <= 0) { e.attackState = 'active'; e.attackTimer = 1.15; e.specialAngle = 0; e.attackHit = false; shake = 8; }
+      return;
+    }
+    if (e.attackState === 'active') {
+      e.specialAngle += dt * (12.0 + (9 - Math.min(9, e.bossLives)) * 0.45);
+      if (!player.hiddenPot && player.z < 52 && dist < 116 && e.specialHitCooldown <= 0) {
+        if (damagePlayer(2, '二刀流の全周回転斬り！ HPが2減った')) {
+          e.specialHitCooldown = 0.62;
+          const d = dist || 1; player.x += dx / d * 48; player.y += dy / d * 48; shake = 10;
+        }
+      }
+      moveEnemyToward(e, targetX, targetY, e.speed * 0.38, dt);
+      if (e.attackTimer <= 0) { e.attackState = 'recover'; e.attackTimer = 0.72; }
+      return;
+    }
+    if (e.attackState === 'recover') {
+      if (e.attackTimer <= 0) { e.attackState = 'idle'; e.attackTimer = 0.38; }
+      return;
+    }
+    if (dist > 92) moveEnemyToward(e, targetX, targetY, e.speed * 1.18, dt);
+    if (dist < 155 && e.attackTimer <= 0 && !player.hiddenPot) { e.attackState = 'windup'; e.attackTimer = 0.52; }
   }
 
   function updateArcherCombat(e, dt, targetX, targetY, dist) {
@@ -1952,7 +2038,9 @@
           ctx.restore();
         }
       }
-      drawWeapon(e, false);
+      if (e.bossType === 'chain') drawChainWeapon(e);
+      else if (e.bossType === 'dual') drawDualWeapons(e);
+      else drawWeapon(e, false);
 
       if (player.attachedEnemy === e) {
         const wobble = Math.sin(e.strugglePhase) * 0.12;
@@ -1969,6 +2057,38 @@
         ctx.fillStyle = '#11151d'; ctx.fillRect(-31, -58, 62, 10);
         ctx.fillStyle = '#8ff57f'; ctx.fillRect(-28, -55, 56 * ratio, 4);
       }
+    }
+    ctx.restore();
+  }
+
+  function drawChainWeapon(e) {
+    ctx.save();
+    const a = e.attackState === 'active' ? e.specialAngle : (e.attackAngle || e.angle || 0);
+    const len = e.attackState === 'active' ? 142 : 72;
+    ctx.rotate(a);
+    if (e.attackState === 'windup') {
+      ctx.globalAlpha = 0.3; ctx.strokeStyle = '#ffb071'; ctx.lineWidth = 18;
+      ctx.beginPath(); ctx.arc(0, 0, 142, -0.7, 0.7); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = '#2b3038'; ctx.lineWidth = 6; ctx.setLineDash([7,6]);
+    ctx.beginPath(); ctx.moveTo(20,5); ctx.lineTo(len,5); ctx.stroke(); ctx.setLineDash([]);
+    ctx.translate(len,5); ctx.fillStyle='#707b84'; ctx.strokeStyle='#0a0d12'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#dce7eb'; ctx.beginPath(); ctx.moveTo(8,-12); ctx.quadraticCurveTo(35,-5,22,22); ctx.quadraticCurveTo(15,8,0,8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawDualWeapons(e) {
+    ctx.save();
+    const spin = e.attackState === 'active' ? e.specialAngle : (e.attackAngle || e.angle || 0);
+    ctx.rotate(spin);
+    if (e.attackState === 'windup') {
+      ctx.globalAlpha=0.28; ctx.strokeStyle='#ffb071'; ctx.lineWidth=18; ctx.beginPath(); ctx.arc(0,0,112,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1;
+    }
+    for (const side of [-1,1]) {
+      ctx.save(); ctx.rotate(side < 0 ? Math.PI : 0);
+      ctx.strokeStyle='#69452d'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(15,6); ctx.lineTo(35,6); ctx.stroke();
+      ctx.fillStyle='#dce7eb'; ctx.strokeStyle='#0a0d12'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(30,-2); ctx.lineTo(88,6); ctx.lineTo(30,14); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
     }
     ctx.restore();
   }
