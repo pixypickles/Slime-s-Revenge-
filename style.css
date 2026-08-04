@@ -277,3 +277,85 @@ button {
 .title-card button + button { background: #b945bd; }
 .title-card button:disabled { opacity: .38; filter: grayscale(.65); }
 #saveStatus { margin: 12px 0 0; color: #cfd8e7; font-size: clamp(10px,1.8vmin,14px); font-weight: 700; }
+
+/* v2.7 タイトル内の操作ガイド */
+.title-card .how-to-button { background: #d28a21; }
+#howToScreen {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: clamp(8px, 2vmin, 18px);
+  background: rgba(7, 10, 15, .96);
+  transition: opacity .18s ease;
+  pointer-events: auto;
+}
+#howToScreen.hidden { opacity: 0; pointer-events: none; }
+.how-to-card {
+  width: min(94%, 860px);
+  max-height: 94%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  background: #202936;
+  box-shadow: 0 9px 0 var(--ink);
+}
+.how-to-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 3px solid var(--ink);
+  background: #17202b;
+}
+.how-to-header h2 { margin: 0; font-size: clamp(25px, 5vmin, 42px); line-height: 1; }
+#howToCloseBtn {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border-radius: 11px;
+  background: #60708e;
+  box-shadow: 0 4px 0 var(--ink);
+  font-weight: 900;
+}
+.how-to-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px 20px;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+.guide-section { margin: 0 0 16px; }
+.guide-section h3 {
+  margin: 0 0 8px;
+  color: #67ead4;
+  font-size: clamp(17px, 3vmin, 25px);
+  text-shadow: 0 2px #000;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.guide-grid article {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 2px solid #090d13;
+  border-radius: 11px;
+  background: #2b3747;
+}
+.guide-grid b { display: block; margin-bottom: 4px; color: #ffd66b; font-size: clamp(13px, 2.2vmin, 18px); }
+.guide-grid span, .warning-guide p { display: block; margin: 0; color: #edf5ff; font-size: clamp(11px, 1.85vmin, 15px); line-height: 1.55; font-weight: 700; }
+.warning-guide { padding: 11px 13px; border: 2px solid #8f3d2a; border-radius: 12px; background: #432723; }
+.warning-guide h3 { color: #ffad78; }
+@media (max-width: 650px), (max-height: 560px) {
+  .guide-grid { grid-template-columns: 1fr; }
+  .how-to-card { width: 97%; max-height: 97%; }
+  .how-to-header { padding: 9px 11px; }
+  .how-to-scroll { padding: 10px 11px 16px; }
+  .guide-section { margin-bottom: 12px; }
+}

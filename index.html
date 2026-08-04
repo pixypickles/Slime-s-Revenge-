@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#11151d" />
-  <title>Slime's Revenge v2.6</title>
-  <link rel="stylesheet" href="style.css?v=26" />
+  <title>Slime's Revenge v2.7</title>
+  <link rel="stylesheet" href="style.css?v=27" />
 </head>
 <body>
   <main id="gameWrap">
@@ -19,8 +19,67 @@
             <h1>Slime's<br><span>Revenge</span></h1>
             <p class="title-copy">奪われた遺跡を、スライムの力で取り戻せ。</p>
             <button id="startBtn" type="button">はじめから</button>
-            <button id="continueBtn" type="button">続きから</button>
+            <button id="continueBtn" type="button">つづきから</button>
+            <button id="howToBtn" class="how-to-button" type="button">操作方法</button>
             <p id="saveStatus">セーブデータなし</p>
+          </div>
+        </section>
+
+        <section id="howToScreen" class="hidden" aria-label="操作方法">
+          <div class="how-to-card">
+            <div class="how-to-header">
+              <div>
+                <p class="title-kicker">HOW TO PLAY</p>
+                <h2>操作方法</h2>
+              </div>
+              <button id="howToCloseBtn" type="button" aria-label="操作方法を閉じる">もどる</button>
+            </div>
+            <div class="how-to-scroll">
+              <section class="guide-section">
+                <h3>基本操作</h3>
+                <div class="guide-grid">
+                  <article><b>移動</b><span>左スティック。柱や壁では、ぶつかった方向へ押し続けると沿って滑ります。</span></article>
+                  <article><b>ダッシュ</b><span>素早く移動。攻撃を抜ける短い無敵時間があります。</span></article>
+                  <article><b>ジャンプ</b><span>障害物やトゲを飛び越えます。ダッシュ中なら高く遠くへ飛びます。</span></article>
+                  <article><b>くっつき</b><span>壁・ツタ・敵の頭・ロボの頭などへ吸着します。離しても少しだけ保持されます。</span></article>
+                </div>
+              </section>
+
+              <section class="guide-section">
+                <h3>主な攻撃方法</h3>
+                <div class="guide-grid">
+                  <article><b>顔へくっつく</b><span>空中から敵の頭へ。押さえ続けると窒息して気絶します。</span></article>
+                  <article><b>足元を転ばせる</b><span>ダッシュしながら敵の足元でくっつき。転倒中は急降下を狙えます。</span></article>
+                  <article><b>急降下</b><span>空中でダッシュ。通常ジャンプは真下、ダッシュジャンプ中は進行方向へ突っ込みます。</span></article>
+                  <article><b>壺をぶつける</b><span>壺に入り、方向入力＋ダッシュ長押し。槍兵などへ強力な一撃になります。</span></article>
+                </div>
+              </section>
+
+              <section class="guide-section">
+                <h3>敵の倒し方</h3>
+                <div class="guide-grid compact">
+                  <article><b>剣兵・槍兵・弓兵</b><span>顔へのくっつき、転倒からの急降下が基本。武器の予告を見て回避します。</span></article>
+                  <article><b>重装歩兵</b><span>頭へのくっつき1回目で兜を外す。転倒か急降下で盾を落とし、その後に攻めます。</span></article>
+                  <article><b>鎖兵・双刃兵</b><span>全周攻撃の予告中に距離を取り、攻撃後の隙へ飛び込みます。</span></article>
+                  <article><b>ボス</b><span>転倒中に急降下。ただし連続踏みには上限があります。攻撃ごとの安全地帯を使います。</span></article>
+                </div>
+              </section>
+
+              <section class="guide-section">
+                <h3>壺・ツタ・回復</h3>
+                <div class="guide-grid">
+                  <article><b>壺へ入る</b><span>壺の真上へ着地。静止中は敵から隠れられます。ジャンプで飛び出します。</span></article>
+                  <article><b>ツタ</b><span>先端付近でくっつき。方向入力で振り子の勢いをつけ、ジャンプで慣性を引き継ぎます。</span></article>
+                  <article><b>ゼリーの実</b><span>敵全滅後に植物へ実がなります。近くでくっつくとHP回復。色違いは最大HP増加です。</span></article>
+                  <article><b>神秘の水</b><span>青く光る壺はHP2回復。壁から湧く泉は触れるたびに全回復します。</span></article>
+                </div>
+              </section>
+
+              <section class="guide-section warning-guide">
+                <h3>特殊な部屋</h3>
+                <p>強風は送風機の予告を確認。自動矢は柱・木箱・壺で防げます。灼熱床ではツタ、壁、ロボの頭、安全地帯へ退避してください。</p>
+              </section>
+            </div>
           </div>
         </section>
 
@@ -45,6 +104,6 @@
     </section>
   </main>
 
-  <script src="game.js?v=26"></script>
+  <script src="game.js?v=27"></script>
 </body>
 </html>

@@ -9,6 +9,9 @@
   const startBtn = document.getElementById('startBtn');
   const continueBtn = document.getElementById('continueBtn');
   const saveStatus = document.getElementById('saveStatus');
+  const howToScreen = document.getElementById('howToScreen');
+  const howToBtn = document.getElementById('howToBtn');
+  const howToCloseBtn = document.getElementById('howToCloseBtn');
 
   const W = canvas.width;
   const H = canvas.height;
@@ -48,8 +51,8 @@
   let currentRoomIndex = 0;
   let gameMode = 'title';
   const TOTAL_ROOMS = 32;
-  const SAVE_KEY = 'slimesRevengeSaveV26';
-  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV25';
+  const SAVE_KEY = 'slimesRevengeSaveV27';
+  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV26';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
 
   function makePlayer() {
@@ -173,7 +176,9 @@
     saveStatus.textContent = room === null ? 'セーブデータなし' : `第${room + 1}部屋から再開できます`;
   }
 
-  function showTitle() { gameMode = 'title'; titleScreen.classList.remove('hidden'); updateContinueButton(); }
+  function closeHowTo() { howToScreen.classList.add('hidden'); }
+  function openHowTo() { howToScreen.classList.remove('hidden'); }
+  function showTitle() { gameMode = 'title'; closeHowTo(); titleScreen.classList.remove('hidden'); updateContinueButton(); }
   function startGame(room, saved = null) {
     runStats = saved ? { hp:saved.hp, maxHp:saved.maxHp, maxFruitTaken:[...saved.maxFruitTaken] } : { hp:5, maxHp:5, maxFruitTaken:[] };
     gameMode = 'playing'; titleScreen.classList.add('hidden'); loadRoom(room);
@@ -253,6 +258,7 @@
   }
 
   window.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape' && !howToScreen.classList.contains('hidden')) { closeHowTo(); e.preventDefault(); return; }
     const name = keyMap[e.code];
     if (!name) return;
     e.preventDefault();
@@ -340,6 +346,9 @@
   resetBtn.addEventListener('click', resetGame);
   startBtn.addEventListener('click', () => { try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(LEGACY_SAVE_KEY); } catch (_) {} startGame(0); });
   continueBtn.addEventListener('click', () => { const saved = readSaveData(); startGame(saved?.room ?? 0, saved); });
+  howToBtn.addEventListener('click', openHowTo);
+  howToCloseBtn.addEventListener('click', closeHowTo);
+  howToScreen.addEventListener('click', (e) => { if (e.target === howToScreen) closeHowTo(); });
 
   function update(dt) {
     if (gameMode !== 'playing') { clearPressed(); return; }
