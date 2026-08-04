@@ -74,7 +74,7 @@
     const rooms = [
       { name: '入口の間', obstacles: [{x:315,y:205,w:86,h:112,height:999,type:'pillar'}], pots:[{x:735,y:340}], plants:[{x:190,y:385,type:'heal'}], vines:[], hazards:[], enemies:[[235,190,'sword']] },
       { name: '二本柱の回廊', obstacles: [{x:260,y:185,w:78,h:125,height:999,type:'pillar'},{x:625,y:255,w:78,h:125,height:999,type:'pillar'}], pots:[{x:475,y:360},{x:790,y:360,mystic:true}], plants:[{x:145,y:375,type:'heal'}], vines:[], hazards:[], enemies:[[200,180,'sword'],[745,180,'spear'],[480,170,'bow']] },
-      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], vines:[], hazards:[], enemies:[[210,170,'spear'],[700,175,'sword'],[510,290,'spear']] },
+      { name: '壺蔵', obstacles: [{x:450,y:205,w:82,h:118,height:999,type:'pillar'},{x:270,y:350,w:90,h:55,height:58,type:'crate'}], pots:[{x:195,y:300},{x:740,y:330},{x:565,y:390}], plants:[{x:790,y:405,type:'max',id:'max-room-3'}], vines:[], hazards:[], enemies:[[210,170,'spear'],[700,175,'sword'],[585,285,'spear']] },
       { name: '兵士の広間', obstacles: [{x:250,y:210,w:82,h:118,height:999,type:'pillar'},{x:625,y:210,w:82,h:118,height:999,type:'pillar'},{x:435,y:350,w:92,h:55,height:58,type:'crate'}], pots:[{x:165,y:380},{x:790,y:380,mystic:true}], plants:[{x:480,y:165,type:'heal'}], vines:[], hazards:[], enemies:[[170,160,'sword'],[385,170,'spear'],[575,170,'bow'],[790,160,'spear']] },
       { name: '王座前廊', obstacles: [{x:355,y:185,w:75,h:135,height:999,type:'pillar'},{x:530,y:185,w:75,h:135,height:999,type:'pillar'}], pots:[{x:220,y:355},{x:740,y:355}], plants:[{x:480,y:390,type:'max',id:'max-room-5'}], vines:[], hazards:[], enemies:[[190,170,'sword'],[350,335,'bow'],[610,335,'spear'],[770,170,'sword']] },
       { name: '吊り庭の間', obstacles: [{x:430,y:260,w:100,h:54,height:58,type:'crate'}], pots:[{x:180,y:380,mystic:true}], plants:[{x:790,y:390,type:'heal'}], vines:[{x:305,y:82,length:150},{x:635,y:82,length:245}], hazards:[], enemies:[[190,170,'sword'],[770,175,'bow'],[480,350,'spear']] },
@@ -578,24 +578,11 @@
       if (p.z > 0 || p.vz !== 0) {
         p.vz -= 590 * dt; // 弱めの重力
         p.z += p.vz * dt;
-        if (p.vz < 0 && p.z <= 34 && !p.slam) {
-          const pot = pots.find((pot) => !pot.broken && Math.hypot(p.x - pot.x, p.y - pot.y) < 24);
-          if (pot) {
-            p.hiddenPot = pot;
-            p.z = 0;
-            p.vz = 0;
-            p.dashJump = false;
-            p.airDashUsed = false;
-            if (pot.mystic && !pot.used) {
-              pot.used = true;
-              healPlayer(2, '神秘の水がスライムへ染み込み、HPが2回復した！');
-              burst(pot.x, pot.y, 20);
-            } else {
-              messageEl.textContent = pot.mystic ? '水を吸収した神秘の壺に隠れた' : '壺の中に隠れた！ 見られていなければ安全です';
-              burst(pot.x, pot.y, 8);
-            }
-            alertEnemiesToPot(pot, 0, true);
-          }
+        // 通常着地だけでなく急降下でも壺へ入れる。急降下時は少し広い受付範囲にする。
+        if (p.vz < 0 && p.z <= (p.slam ? 48 : 34)) {
+          const enterRadius = p.slam ? 31 : 24;
+          const pot = pots.find((pot) => !pot.broken && Math.hypot(p.x - pot.x, p.y - pot.y) < enterRadius);
+          if (pot) enterPot(pot, p.slam);
         }
         if (!p.hiddenPot && p.z <= 0) {
           const impact = p.slam;
@@ -758,6 +745,32 @@
       const fruit = plants.some(p => p.fruitReady && !p.consumed);
       messageEl.textContent = fruit ? '敵を全員倒した！ 植物に実がなった。くっつきで吸収できる！' : '扉が開いた！ 上の出口へ！';
     }
+  }
+
+  function enterPot(pot, viaSlam = false) {
+    const p = player;
+    p.hiddenPot = pot;
+    p.x = pot.x;
+    p.y = pot.y + 4;
+    p.z = 0;
+    p.vz = 0;
+    p.slam = false;
+    p.diagonalSlam = false;
+    p.dashJump = false;
+    p.airDashUsed = false;
+    p.dashTimer = 0;
+    if (pot.mystic && !pot.used) {
+      pot.used = true;
+      healPlayer(2, '神秘の水がスライムへ染み込み、HPが2回復した！');
+      burst(pot.x, pot.y, 20);
+    } else {
+      messageEl.textContent = viaSlam
+        ? (pot.mystic ? '急降下で神秘の壺へ飛び込んだ！' : '急降下で壺へ飛び込んだ！')
+        : (pot.mystic ? '水を吸収した神秘の壺に隠れた' : '壺の中に隠れた！ 見られていなければ安全です');
+      burst(pot.x, pot.y, viaSlam ? 14 : 8);
+    }
+    if (viaSlam) shake = Math.max(shake, 4);
+    alertEnemiesToPot(pot, 0, true);
   }
 
   function exitPot(pot, broken, launchX = player.facingX, launchY = player.facingY) {
@@ -1679,7 +1692,8 @@
         continue;
       }
 
-      if (input.stickPressed && p.z > 28 && dist < 48 && e.faceCooldown <= 0 && e.state !== 'stunned' && e.bossType !== 'slimecannon') {
+      const faceAttachRange = e.weapon === 'spear' ? 57 : 48;
+      if (input.stickPressed && p.z > 26 && dist < faceAttachRange && e.faceCooldown <= 0 && e.state !== 'stunned' && e.bossType !== 'slimecannon') {
         p.attachedEnemy = e;
         p.attachTimer = 0;
         e.faceCooldown = 0.5;
