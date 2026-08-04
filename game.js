@@ -77,9 +77,20 @@
       { name: '吊り庭の間', obstacles: [{x:430,y:260,w:100,h:54,height:58,type:'crate'}], pots:[{x:180,y:380,mystic:true}], plants:[{x:790,y:390,type:'heal'}], vines:[{x:305,y:82,length:150},{x:635,y:82,length:245}], hazards:[], enemies:[[190,170,'sword'],[770,175,'bow'],[480,350,'spear']] },
       { name: '棘床の水路', obstacles: [{x:210,y:175,w:72,h:118,height:999,type:'pillar'},{x:678,y:175,w:72,h:118,height:999,type:'pillar'}], pots:[{x:145,y:405},{x:815,y:405,mystic:true}], plants:[{x:790,y:150,type:'max',id:'max-room-7'}], vines:[{x:480,y:76,length:285},{x:305,y:72,length:175},{x:655,y:72,length:215}], hazards:[{x:315,y:205,w:330,h:175,type:'spikes'}], enemies:[[165,150,'bow'],[795,150,'bow'],[480,170,'spear']] },
       { name: '守護門前', obstacles: [{x:295,y:190,w:76,h:132,height:999,type:'pillar'},{x:590,y:190,w:76,h:132,height:999,type:'pillar'},{x:430,y:330,w:100,h:58,height:60,type:'crate'}], pots:[{x:175,y:365,mystic:true},{x:785,y:365},{x:480,y:405}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:350,y:72,length:185},{x:580,y:72,length:265}], hazards:[{x:405,y:205,w:150,h:105,type:'spikes'}], enemies:[[160,160,'sword'],[320,350,'bow'],[480,190,'spear'],[640,350,'bow'],[800,160,'sword']] },
-      { name: '茨の大広間', obstacles: [{x:235,y:185,w:76,h:128,height:999,type:'pillar'}], pots:[{x:755,y:298,mystic:true},{x:180,y:390}], plants:[{x:205,y:145,type:'heal'}], vines:[{x:520,y:70,length:250},{x:665,y:72,length:205},{x:820,y:70,length:275}], hazards:[{x:500,y:110,w:390,h:150,type:'spikes'},{x:500,y:260,w:205,h:135,type:'spikes'},{x:805,y:260,w:85,h:135,type:'spikes'}], enemies:[[175,180,'sword'],[360,345,'bow'],[420,175,'spear']] },
-      { name: '連環の吊り橋', obstacles: [{x:205,y:245,w:72,h:120,height:999,type:'pillar'},{x:700,y:175,w:72,h:120,height:999,type:'pillar'}], pots:[{x:155,y:390},{x:805,y:390,mystic:true}], plants:[{x:470,y:155,type:'max',id:'max-room-10'}], vines:[{x:330,y:70,length:170},{x:480,y:72,length:285},{x:635,y:70,length:205}], hazards:[{x:285,y:250,w:390,h:125,type:'spikes'}], enemies:[[165,165,'bow'],[420,185,'sword'],[565,180,'spear'],[805,170,'bow']] },
-      { name: '王の茨庭', obstacles: [{x:180,y:180,w:72,h:125,height:999,type:'pillar'},{x:708,y:180,w:72,h:125,height:999,type:'pillar'},{x:430,y:330,w:100,h:55,height:58,type:'crate'}], pots:[{x:150,y:390,mystic:true},{x:810,y:390}], plants:[{x:480,y:150,type:'heal'}], vines:[{x:285,y:72,length:225},{x:480,y:70,length:155},{x:675,y:72,length:260}], hazards:[{x:300,y:210,w:150,h:105,type:'spikes'},{x:510,y:210,w:150,h:105,type:'spikes'}], enemies:[[150,160,'sword'],[300,365,'bow'],[480,190,'spear'],[660,365,'bow'],[810,160,'sword']] },
+      { name: '茨の大広間', obstacles: [
+        {x:235,y:185,w:76,h:128,height:999,type:'pillar'},
+        // 棘床を囲む低い石縁。地上の下抜けを防ぎ、ジャンプやツタなら越えられる。
+        {x:480,y:100,w:410,h:18,height:58,type:'spikeRim'}, {x:480,y:422,w:410,h:18,height:58,type:'spikeRim'},
+        {x:480,y:100,w:18,h:340,height:58,type:'spikeRim'}, {x:872,y:100,w:18,h:340,height:58,type:'spikeRim'},
+        // 神秘の水壺がある安全な張り出し。
+        {x:710,y:242,w:180,h:16,height:44,type:'spikeRim'}, {x:710,y:365,w:180,h:16,height:44,type:'spikeRim'},
+        {x:710,y:242,w:16,h:139,height:44,type:'spikeRim'}
+      ], pots:[{x:790,y:305,mystic:true},{x:180,y:390}], plants:[{x:205,y:145,type:'heal'}],
+      vines:[{x:520,y:70,length:250},{x:665,y:72,length:205},{x:820,y:70,length:275}],
+      hazards:[{x:498,y:118,w:374,h:124,type:'spikes'},{x:498,y:242,w:212,h:180,type:'spikes'},{x:726,y:381,w:146,h:41,type:'spikes'},{x:890,y:118,w:0,h:0,type:'spikes'}],
+      enemies:[[175,180,'sword'],[350,345,'bow'],[420,175,'heavy']] },
+      { name: '連環の吊り橋', obstacles: [{x:205,y:245,w:72,h:120,height:999,type:'pillar'},{x:700,y:175,w:72,h:120,height:999,type:'pillar'}], pots:[{x:155,y:390},{x:805,y:390,mystic:true}], plants:[{x:470,y:155,type:'max',id:'max-room-10'}], vines:[{x:330,y:70,length:170},{x:480,y:72,length:285},{x:635,y:70,length:205}], hazards:[{x:285,y:250,w:390,h:125,type:'spikes'}], enemies:[[165,165,'bow'],[420,185,'heavy'],[565,180,'spear'],[805,170,'bow']] },
+      { name: '王の茨庭', obstacles: [{x:180,y:180,w:72,h:125,height:999,type:'pillar'},{x:708,y:180,w:72,h:125,height:999,type:'pillar'},{x:430,y:330,w:100,h:55,height:58,type:'crate'}], pots:[{x:150,y:390,mystic:true},{x:810,y:390}], plants:[{x:480,y:150,type:'heal'}], vines:[{x:285,y:72,length:225},{x:480,y:70,length:155},{x:675,y:72,length:260}], hazards:[{x:300,y:210,w:150,h:105,type:'spikes'},{x:510,y:210,w:150,h:105,type:'spikes'}], enemies:[[150,160,'heavy'],[300,365,'bow'],[480,190,'spear'],[660,365,'bow'],[810,160,'sword']] },
       { name: '守護隊長の間', finalBoss:true, obstacles: [{x:185,y:215,w:75,h:120,height:999,type:'pillar'},{x:700,y:215,w:75,h:120,height:999,type:'pillar'}], pots:[{x:285,y:380,mystic:true},{x:675,y:380}], plants:[{x:480,y:405,type:'heal'}], vines:[{x:480,y:72,length:190}], hazards:[], enemies:[[480,205,'boss']] },
     ];
     return rooms[index];
@@ -137,17 +148,21 @@
   function makeEnemy(x, y, weapon = 'sword') {
     const isBoss = weapon === 'boss';
     if (isBoss) weapon = 'sword';
-    const patrolRadius = isBoss ? 90 : (weapon === 'spear' ? 115 : (weapon === 'bow' ? 165 : 145));
+    const isHeavy = weapon === 'heavy';
+    const patrolRadius = isBoss ? 90 : (weapon === 'spear' ? 115 : (weapon === 'bow' ? 165 : (isHeavy ? 105 : 145)));
     return {
       x, y,
-      radius: isBoss ? 38 : 25,
-      hp: isBoss ? 3 : 2,
+      radius: isBoss ? 38 : (isHeavy ? 30 : 25),
+      hp: isBoss ? 3 : (isHeavy ? 2 : 2),
+      isHeavy,
+      helmetOn: isHeavy,
+      shieldOn: isHeavy,
       isBoss,
       bossLives: isBoss ? 3 : 1,
       state: 'walk', // walk, tripped, stunned（既存戦闘状態）
       stateTimer: 0,
       angle: Math.random() * Math.PI * 2,
-      speed: isBoss ? 92 : (weapon === 'bow' ? 72 : 58 + Math.random() * 18),
+      speed: isBoss ? 92 : (weapon === 'bow' ? 72 : (isHeavy ? 46 : 58 + Math.random() * 18)),
       faceCooldown: 0,
       weapon,
       attackState: 'idle', // idle, windup, active, recover
@@ -158,7 +173,7 @@
 
       // v0.9 敵AI。戦闘状態とは分離し、既存の転倒・気絶処理を維持する。
       aiState: 'patrol', // patrol, chase, search, investigatePot
-      visionRange: isBoss ? 380 : (weapon === 'spear' ? 300 : (weapon === 'bow' ? 390 : 270)),
+      visionRange: isBoss ? 380 : (weapon === 'spear' ? 300 : (weapon === 'bow' ? 390 : (isHeavy ? 255 : 270))),
       visionHalfAngle: weapon === 'spear' ? 0.62 : (weapon === 'bow' ? 0.72 : 0.78),
       alert: 0,
       lostSightTimer: 0,
@@ -449,11 +464,23 @@
           p.vz = 80;
           e.faceCooldown = 0.7;
         } else if (p.attachTimer >= 1.25) {
-          stunEnemy(e);
-          p.attachedEnemy = null;
-          p.z = 15;
-          p.vz = 110;
-          burst(e.x, e.y, 16);
+          if (e.isHeavy && e.helmetOn) {
+            e.helmetOn = false;
+            p.attachedEnemy = null;
+            p.z = 18;
+            p.vz = 145;
+            e.faceCooldown = 0.9;
+            e.aiState = 'chase';
+            e.alert = 1;
+            messageEl.textContent = '重装歩兵の兜を引きはがした！ もう一度頭へくっつける';
+            burst(e.x, e.y - 24, 24);
+          } else {
+            stunEnemy(e);
+            p.attachedEnemy = null;
+            p.z = 15;
+            p.vz = 110;
+            burst(e.x, e.y, 16);
+          }
         }
       }
     } else {
@@ -780,7 +807,7 @@
         const dist = Math.hypot(dx, dy) || 1;
         e.angle = Math.atan2(dy, dx);
         moveEnemyToward(e, e.x - dx, e.y - dy, e.speed * 1.25, dt);
-      } else if (e.weapon === 'sword') {
+      } else if (e.weapon === 'sword' || e.weapon === 'heavy') {
         const dx = pot.x - e.x;
         const dy = pot.y - e.y;
         const dist = Math.hypot(dx, dy);
@@ -892,7 +919,7 @@
       return;
     }
 
-    const reach = e.weapon === 'spear' ? 122 : 82;
+    const reach = e.weapon === 'spear' ? 122 : (e.weapon === 'heavy' ? 92 : 82);
 
     if (e.attackState !== 'idle') {
       e.attackTimer -= dt;
@@ -1053,7 +1080,7 @@
 
   function enemyPositionUnsafe(x, y, radius) {
     if (circleHitsAnyObstacle(x, y, radius, 0)) return true;
-    return hazards?.some((hazard) => hazard.type === 'spikes' && circleRectHit(x, y, radius + 8, hazard));
+    return hazards?.some((hazard) => hazard.type === 'spikes' && circleRectHit(x, y, radius + 5, spikeHitbox(hazard, 7)));
   }
 
   function moveEnemyToward(e, tx, ty, speed, dt) {
@@ -1216,6 +1243,11 @@
     }
   }
 
+
+  function spikeHitbox(hazard, inset = 12) {
+    return { x: hazard.x + inset, y: hazard.y + inset, w: Math.max(0, hazard.w - inset * 2), h: Math.max(0, hazard.h - inset * 2) };
+  }
+
   function circleRectHit(cx, cy, radius, rect) {
     const qx = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
     const qy = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
@@ -1303,10 +1335,15 @@
       const dy = p.y - e.y;
       const dist = Math.hypot(dx, dy);
 
-      if (input.stickPressed && p.dashTimer > 0 && p.z < 12 && dist < 56 && e.state === 'walk') {
+      if (input.stickPressed && p.dashTimer > 0 && p.z < 12 && dist < (e.isHeavy ? 64 : 56) && e.state === 'walk') {
         e.state = 'tripped';
-        e.stateTimer = 2.2;
+        e.stateTimer = e.isHeavy ? 2.55 : 2.2;
         p.dashTimer = 0;
+        if (e.isHeavy && e.shieldOn) {
+          e.shieldOn = false;
+          messageEl.textContent = '重装歩兵を転ばせて盾を手放させた！';
+          burst(e.x + Math.cos(e.angle) * 28, e.y + Math.sin(e.angle) * 28, 20);
+        }
         burst(e.x, e.y, 12);
         continue;
       }
@@ -1336,7 +1373,15 @@
     for (const e of enemies) {
       if (e.state === 'stunned') continue;
       const dist = Math.hypot(player.x - e.x, player.y - e.y);
-      if (dist < 76) {
+      if (dist < (e.isHeavy ? 86 : 76)) {
+        if (e.isHeavy && e.shieldOn) {
+          e.shieldOn = false;
+          e.state = 'tripped';
+          e.stateTimer = 2.5;
+          messageEl.textContent = '急降下の衝撃で重装歩兵が盾を落とした！';
+          burst(e.x + Math.cos(e.angle) * 30, e.y + Math.sin(e.angle) * 30, 22);
+          continue;
+        }
         e.hp -= e.state === 'tripped' ? 2 : 1;
         e.state = e.hp <= 0 ? 'stunned' : 'tripped';
         e.stateTimer = e.state === 'stunned' ? 999 : 1.8;
@@ -1367,8 +1412,9 @@
       hazard.pulse += dt * 2.4;
       if (hazard.type !== 'spikes') continue;
       // 高く跳んでいれば棘床を越えられる。通常ジャンプ、ダッシュジャンプ、ツタの全てが解法になる。
-      if (player.z >= 34 || player.invuln > 0) continue;
-      if (circleRectHit(player.x, player.y, player.radius * 0.72, hazard)) {
+      if (player.z >= 22 || player.invuln > 0) continue;
+      const hitbox = spikeHitbox(hazard, 13);
+      if (hitbox.w > 0 && hitbox.h > 0 && circleRectHit(player.x, player.y, player.radius * 0.48, hitbox)) {
         damagePlayer(1, 'トゲ床！ HPが1減った');
         const cx = hazard.x + hazard.w / 2;
         const cy = hazard.y + hazard.h / 2;
@@ -1509,13 +1555,18 @@
   function drawHazard(hazard) {
     if (hazard.type !== 'spikes') return;
     ctx.save();
-    ctx.fillStyle = '#5f5848';
+    // 床面より一段低い棘穴として描画。縁に少し触れただけではダメージにならない。
+    ctx.fillStyle = '#8f8468';
     ctx.fillRect(hazard.x, hazard.y, hazard.w, hazard.h);
+    ctx.fillStyle = '#48443b';
+    ctx.fillRect(hazard.x + 8, hazard.y + 8, Math.max(0, hazard.w - 16), Math.max(0, hazard.h - 16));
     ctx.strokeStyle = '#302d28';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(hazard.x + 7, hazard.y + 7, Math.max(0, hazard.w - 14), Math.max(0, hazard.h - 14));
     ctx.lineWidth = 2;
     const step = 25;
-    for (let y = hazard.y + 5; y < hazard.y + hazard.h - 4; y += step) {
-      for (let x = hazard.x + 5; x < hazard.x + hazard.w - 4; x += step) {
+    for (let y = hazard.y + 14; y < hazard.y + hazard.h - 10; y += step) {
+      for (let x = hazard.x + 14; x < hazard.x + hazard.w - 10; x += step) {
         const offset = ((Math.floor((y-hazard.y)/step) & 1) ? step * 0.5 : 0);
         const sx = x + offset;
         if (sx > hazard.x + hazard.w - 6) continue;
@@ -1800,6 +1851,20 @@
         ctx.fillStyle = '#1a1e26';
         ctx.beginPath(); ctx.arc(-6, -20, 2.5, 0, Math.PI * 2); ctx.arc(6, -20, 2.5, 0, Math.PI * 2); ctx.fill();
       }
+      if (e.isHeavy) {
+        if (e.helmetOn) {
+          ctx.fillStyle = '#75808a'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.arc(0, -22, 23, Math.PI, Math.PI * 2); ctx.lineTo(22, -13); ctx.lineTo(-22, -13); ctx.closePath(); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#303943'; ctx.fillRect(-20, -18, 40, 7);
+        }
+        if (e.shieldOn) {
+          ctx.save(); ctx.rotate(e.angle || 0); ctx.translate(31, 5);
+          ctx.fillStyle = '#697984'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 6;
+          ctx.beginPath(); ctx.roundRect(-7, -25, 26, 52, 8); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#9ba9af'; ctx.beginPath(); ctx.arc(6, 1, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+      }
       drawWeapon(e, false);
 
       if (player.attachedEnemy === e) {
@@ -1856,10 +1921,10 @@
       ctx.fillStyle = '#d7e2e7'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
       ctx.beginPath(); ctx.moveTo(102, 8); ctx.lineTo(82, -2); ctx.lineTo(82, 18); ctx.closePath(); ctx.fill(); ctx.stroke();
     } else {
-      ctx.strokeStyle = '#69452d'; ctx.lineWidth = 8;
+      ctx.strokeStyle = '#69452d'; ctx.lineWidth = e.weapon === 'heavy' ? 10 : 8;
       ctx.beginPath(); ctx.moveTo(13, 8); ctx.lineTo(31, 8); ctx.stroke();
       ctx.fillStyle = '#d7e2e7'; ctx.strokeStyle = '#0a0d12'; ctx.lineWidth = 5;
-      ctx.beginPath(); ctx.moveTo(27, 2); ctx.lineTo(74, 8); ctx.lineTo(27, 14); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(27, e.weapon === 'heavy' ? -2 : 2); ctx.lineTo(e.weapon === 'heavy' ? 82 : 74, 8); ctx.lineTo(27, e.weapon === 'heavy' ? 18 : 14); ctx.closePath(); ctx.fill(); ctx.stroke();
     }
     ctx.restore();
   }
