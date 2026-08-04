@@ -48,8 +48,8 @@
   let currentRoomIndex = 0;
   let gameMode = 'title';
   const TOTAL_ROOMS = 32;
-  const SAVE_KEY = 'slimesRevengeSaveV24';
-  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV23';
+  const SAVE_KEY = 'slimesRevengeSaveV25';
+  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV24';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
 
   function makePlayer() {
@@ -115,7 +115,7 @@
       { name:'泉へ続く射廊', obstacles:[{x:250,y:220,w:72,h:125,height:999,type:'pillar'},{x:635,y:220,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:350,y:72,length:210},{x:620,y:72,length:235}], hazards:[{type:'turret',x:850,y:125,dirX:-1,dirY:0,interval:1.7,delay:.1},{type:'turret',x:110,y:225,dirX:1,dirY:0,interval:1.95,delay:.6},{type:'turret',x:850,y:345,dirX:-1,dirY:0,interval:2.15,delay:1.1}], enemies:[[230,175,'dualmob'],[480,200,'heavy'],[730,175,'chainmob']] },
       { name:'湧泉の乱弩王', checkpointBoss:true, bossLives:16, obstacles:[{x:250,y:190,w:72,h:125,height:999,type:'pillar'},{x:640,y:190,w:72,h:125,height:999,type:'pillar'}], pots:[{x:150,y:390},{x:810,y:390}], plants:[], vines:[{x:480,y:72,length:205}], hazards:[{type:'wallfountain',x:ROOM.left+18,y:365,radius:48,side:'left'},{type:'wind',x:105,y:82,w:750,h:340,dirX:-1,dirY:0,interval:5.3,duration:1.25,power:180},{type:'turret',x:850,y:110,dirX:-1,dirY:0,interval:1.35,delay:.1},{type:'turret',x:850,y:210,dirX:-1,dirY:0,interval:1.55,delay:.5},{type:'turret',x:850,y:330,dirX:-1,dirY:0,interval:1.75,delay:.9},{type:'turret',x:110,y:150,dirX:1,dirY:0,interval:1.65,delay:.3},{type:'turret',x:110,y:285,dirX:1,dirY:0,interval:1.9,delay:1.0}], enemies:[[480,185,'crossbowboss']] },
       { name:'古代炉心実験区', obstacles:[{x:205,y:185,w:72,h:125,height:999,type:'pillar'},{x:685,y:275,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[], vines:[{x:260,y:70,length:210},{x:430,y:70,length:275},{x:610,y:70,length:190},{x:770,y:70,length:250}], hazards:[{type:'heatfloor',x:ROOM.left+14,y:ROOM.top+14,w:ROOM.right-ROOM.left-28,h:ROOM.bottom-ROOM.top-28,interval:5.6,warningDuration:1.25,duration:2.35},{type:'turret',x:850,y:145,dirX:-1,dirY:0,interval:2.2,delay:.4},{type:'turret',x:110,y:335,dirX:1,dirY:0,interval:2.55,delay:1.2}], enemies:[[480,235,'robot']] },
-      { name:'紅蓮機関の玉座', finalBoss:true, bossLives:18, spawnX:135, spawnY:400, obstacles:[], pots:[{x:125,y:110,mystic:true},{x:835,y:110,mystic:true},{x:125,y:405,mystic:true},{x:835,y:405,mystic:true}], plants:[], vines:[{x:245,y:70,length:225},{x:390,y:70,length:285},{x:570,y:70,length:245},{x:720,y:70,length:300}], hazards:[{type:'heatfloor',x:ROOM.left+8,y:ROOM.top+8,w:ROOM.right-ROOM.left-16,h:ROOM.bottom-ROOM.top-16,alwaysActive:true,safeZones:[{x:82,y:76,w:112,h:92},{x:766,y:76,w:112,h:92},{x:82,y:350,w:112,h:92},{x:766,y:350,w:112,h:92}]},{type:'spikes',x:ROOM.left+8,y:ROOM.top+190,w:ROOM.right-ROOM.left-16,h:38}], enemies:[[275,210,'carrier'],[480,330,'carrier'],[700,205,'carrier'],[480,205,'slimecannon']] },
+      { name:'紅蓮機関の玉座', finalBoss:true, bossLives:14, spawnX:142, spawnY:392, obstacles:[], pots:[{x:828,y:112,mystic:true},{x:828,y:400,mystic:true},{x:132,y:112,mystic:true}], plants:[], vines:[{x:205,y:70,length:205},{x:330,y:70,length:285},{x:480,y:70,length:220},{x:630,y:70,length:285},{x:755,y:70,length:205}], hazards:[{type:'heatfloor',x:ROOM.left+8,y:ROOM.top+8,w:ROOM.right-ROOM.left-16,h:ROOM.bottom-ROOM.top-16,alwaysActive:true,safeZones:[{x:78,y:72,w:132,h:106},{x:750,y:72,w:132,h:106},{x:78,y:338,w:142,h:108},{x:742,y:338,w:140,h:108}]},{type:'wallfountain',x:ROOM.left+22,y:388,radius:54,side:'left'},{type:'spikes',x:ROOM.left+8,y:ROOM.top+190,w:ROOM.right-ROOM.left-16,h:34}], enemies:[[260,210,'carrier'],[480,330,'carrier'],[700,205,'carrier'],[480,205,'slimecannon']] },
     ];
     return rooms[index];
   }
@@ -198,6 +198,8 @@
       bossLives: isBoss ? 3 : 1,
       specialAngle: 0,
       specialHitCooldown: 0,
+      slamChain: 0,
+      slamLock: 0,
       state: 'walk', // walk, tripped, stunned（既存戦闘状態）
       stateTimer: 0,
       angle: Math.random() * Math.PI * 2,
@@ -426,8 +428,11 @@
     if (input.jumpPressed && p.attachedEnemy) {
       p.attachedEnemy = null;
       p.attachTimer = 0;
-      p.vz = 370;
+      p.vz = 430;
+      p.dashJump = true;
+      p.dashJumpX = p.facingX; p.dashJumpY = p.facingY;
       p.airDashUsed = false;
+      messageEl.textContent = 'ロボの頭を蹴ってジャンプした！';
     } else if (input.jumpPressed && (p.z <= 0.01 || p.wallStick > 0 || p.graceStick > 0)) {
       const fromWall = p.wallStick > 0 || p.graceStick > 0;
       const fromDash = p.dashTimer > 0 && !fromWall;
@@ -499,7 +504,7 @@
         p.z = (e.isRobot ? 45 : 39) + Math.cos(e.strugglePhase * 1.7) * 2;
         p.vz = 0;
         p.attachTimer += dt;
-        if (!input.stick) {
+        if (!input.stick && !e.isRobot) {
           p.attachedEnemy = null;
           p.z = 20;
           p.vz = 80;
@@ -827,6 +832,7 @@
 
   function updateEnemy(e, dt) {
     e.faceCooldown = Math.max(0, e.faceCooldown - dt);
+    e.slamLock = Math.max(0, (e.slamLock || 0) - dt);
     e.alert = Math.max(0, e.alert - dt * 0.32);
     if (e.state === 'stunned') return;
     if (player.attachedEnemy === e && !e.isRobot) return;
@@ -836,6 +842,7 @@
       e.stateTimer -= dt;
       if (e.stateTimer <= 0) {
         e.state = 'walk';
+        if (e.isBoss) e.slamChain = 0;
         e.angle += Math.PI;
         e.attackTimer = 0.55;
         e.aiState = e.alert > 0 ? 'search' : 'patrol';
@@ -1667,20 +1674,41 @@
           continue;
         }
         if (e.isBoss) {
-          // 急降下は一度の着地につき装甲1段階だけを破る。HPを直接削って装甲を飛ばさない。
+          if ((e.slamLock || 0) > 0) continue;
+          // 通常ボスは転倒中に最大3回まで連続踏み可能。その後は強制復帰して永久踏みを防ぐ。
+          e.slamChain = (e.slamChain || 0) + 1;
           stunEnemy(e);
           if (e.bossType === 'slimecannon') {
-            const dx = player.x - e.x, dy = player.y - e.y, len = Math.hypot(dx,dy)||1;
-            player.x += dx/len*72; player.y += dy/len*72; player.vz = 520;
-            messageEl.textContent = '兵器へ急降下！ 大きな反動で弾き飛ばされた！'; shake=12;
+            const safeTargets = [
+              {x:150,y:118},{x:810,y:118},{x:150,y:392},{x:810,y:392},
+              ...vines.map(v=>({x:v.x,y:v.y+Math.min(v.length,210)}))
+            ];
+            let target=safeTargets[0], best=Infinity;
+            for(const t of safeTargets){const d=Math.hypot(player.x-t.x,player.y-t.y);if(d<best){best=d;target=t;}}
+            const dx=target.x-player.x,dy=target.y-player.y,len=Math.hypot(dx,dy)||1;
+            player.dashJump=true;player.dashJumpX=dx/len;player.dashJumpY=dy/len;player.vz=500;player.z=Math.max(player.z,22);player.invuln=Math.max(player.invuln,.45);
+            player.x += dx/len*28; player.y += dy/len*28;
+            messageEl.textContent = '兵器へ急降下！ 青い火花の方向へ弾かれた。ツタか安全地帯を狙え！'; shake=12;
+            burst(target.x,target.y,20);
           }
-          if (e.state !== 'stunned') { e.state='tripped'; e.stateTimer=1.45; }
+          if (e.state !== 'stunned') {
+            if (e.slamChain >= 3) {
+              e.state='walk'; e.stateTimer=0; e.slamLock=1.35; e.slamChain=0; e.attackTimer=.25;
+              if (e.bossType !== 'slimecannon') messageEl.textContent='3連続で踏んだ！ ボスが強引に体勢を立て直した';
+            } else { e.state='tripped'; e.stateTimer=1.15; }
+          }
         } else if (e.isRobot) {
-          e.hp -= 1;
-          e.state = e.hp <= 0 ? 'stunned' : 'tripped';
-          e.stateTimer = e.state === 'stunned' ? 999 : 0.75;
-          messageEl.textContent = e.hp <= 0 ? '自動攻撃ロボを停止させた！' : `急降下で装甲をへこませた！ 残り${e.hp}`;
-          burst(e.x,e.y,18);
+          if (e.passiveRobot) {
+            player.vz = Math.max(player.vz, 360);
+            messageEl.textContent = '運搬ロボは止まらない。頭を足場にできる！';
+            burst(e.x,e.y,10);
+          } else {
+            e.hp -= 1;
+            e.state = e.hp <= 0 ? 'stunned' : 'tripped';
+            e.stateTimer = e.state === 'stunned' ? 999 : 0.75;
+            messageEl.textContent = e.hp <= 0 ? '自動攻撃ロボを停止させた！' : `急降下で装甲をへこませた！ 残り${e.hp}`;
+            burst(e.x,e.y,18);
+          }
         } else {
           e.hp -= e.state === 'tripped' ? 2 : 1;
           e.state = e.hp <= 0 ? 'stunned' : 'tripped';
@@ -1932,11 +1960,17 @@
     }
     if (hazard.type === 'wallfountain') {
       ctx.save(); ctx.translate(hazard.x,hazard.y);
-      const r=hazard.radius||48; ctx.globalAlpha=.25; ctx.fillStyle='#74efff'; ctx.beginPath();ctx.ellipse(20,20,r+18,r*.55,0,0,Math.PI*2);ctx.fill();
-      ctx.globalAlpha=1;ctx.strokeStyle='#11151d';ctx.lineWidth=7;ctx.fillStyle='#4b5660';ctx.beginPath();ctx.arc(0,-28,24,0,Math.PI*2);ctx.fill();ctx.stroke();
-      ctx.fillStyle='#65e9ff';ctx.beginPath();ctx.moveTo(-12,-18);ctx.quadraticCurveTo(4,5,18,12);ctx.quadraticCurveTo(5,28,-8,17);ctx.closePath();ctx.fill();
-      ctx.fillStyle='#38cfe8';ctx.beginPath();ctx.ellipse(18,18,r,r*.4,0,0,Math.PI*2);ctx.fill();ctx.stroke();
-      for(let i=0;i<6;i++){const a=hazard.pulse+i;ctx.fillStyle='#baffff';ctx.beginPath();ctx.arc(10+Math.cos(a)*22,-2+Math.sin(a*1.4)*22,3.5,0,Math.PI*2);ctx.fill();}
+      const r=hazard.radius||48;
+      ctx.globalAlpha=.24; ctx.fillStyle='#74efff'; ctx.beginPath();ctx.ellipse(28,20,r+20,r*.52,0,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+      // 壁に埋め込まれた楕円形の古代吐出口。
+      ctx.strokeStyle='#11151d';ctx.lineWidth=7;ctx.fillStyle='#59636d';ctx.beginPath();ctx.ellipse(0,-28,18,31,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#171d24';ctx.beginPath();ctx.ellipse(3,-27,10,22,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#9aa6ad';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(3,-27,7,17,0,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='#65e9ff';ctx.beginPath();ctx.moveTo(2,-12);ctx.quadraticCurveTo(10,2,24,12);ctx.quadraticCurveTo(18,27,4,20);ctx.quadraticCurveTo(-2,5,2,-12);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#d8ffff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(7,-8);ctx.quadraticCurveTo(13,4,18,15);ctx.stroke();
+      ctx.fillStyle='#38cfe8';ctx.strokeStyle='#11151d';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(25,20,r,r*.38,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+      for(let i=0;i<7;i++){const a=hazard.pulse+i;ctx.fillStyle='#baffff';ctx.beginPath();ctx.arc(14+Math.cos(a)*25,-2+Math.sin(a*1.4)*24,3.5,0,Math.PI*2);ctx.fill();}
       ctx.restore();return;
     }
     if (hazard.type === 'fountain') {
