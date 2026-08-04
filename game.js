@@ -48,8 +48,8 @@
   let currentRoomIndex = 0;
   let gameMode = 'title';
   const TOTAL_ROOMS = 32;
-  const SAVE_KEY = 'slimesRevengeSaveV25';
-  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV24';
+  const SAVE_KEY = 'slimesRevengeSaveV26';
+  const LEGACY_SAVE_KEY = 'slimesRevengeSaveV25';
   let runStats = { hp: 5, maxHp: 5, maxFruitTaken: [] };
 
   function makePlayer() {
@@ -115,7 +115,7 @@
       { name:'泉へ続く射廊', obstacles:[{x:250,y:220,w:72,h:125,height:999,type:'pillar'},{x:635,y:220,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[{x:480,y:145,type:'heal'}], vines:[{x:350,y:72,length:210},{x:620,y:72,length:235}], hazards:[{type:'turret',x:850,y:125,dirX:-1,dirY:0,interval:1.7,delay:.1},{type:'turret',x:110,y:225,dirX:1,dirY:0,interval:1.95,delay:.6},{type:'turret',x:850,y:345,dirX:-1,dirY:0,interval:2.15,delay:1.1}], enemies:[[230,175,'dualmob'],[480,200,'heavy'],[730,175,'chainmob']] },
       { name:'湧泉の乱弩王', checkpointBoss:true, bossLives:16, obstacles:[{x:250,y:190,w:72,h:125,height:999,type:'pillar'},{x:640,y:190,w:72,h:125,height:999,type:'pillar'}], pots:[{x:150,y:390},{x:810,y:390}], plants:[], vines:[{x:480,y:72,length:205}], hazards:[{type:'wallfountain',x:ROOM.left+18,y:365,radius:48,side:'left'},{type:'wind',x:105,y:82,w:750,h:340,dirX:-1,dirY:0,interval:5.3,duration:1.25,power:180},{type:'turret',x:850,y:110,dirX:-1,dirY:0,interval:1.35,delay:.1},{type:'turret',x:850,y:210,dirX:-1,dirY:0,interval:1.55,delay:.5},{type:'turret',x:850,y:330,dirX:-1,dirY:0,interval:1.75,delay:.9},{type:'turret',x:110,y:150,dirX:1,dirY:0,interval:1.65,delay:.3},{type:'turret',x:110,y:285,dirX:1,dirY:0,interval:1.9,delay:1.0}], enemies:[[480,185,'crossbowboss']] },
       { name:'古代炉心実験区', obstacles:[{x:205,y:185,w:72,h:125,height:999,type:'pillar'},{x:685,y:275,w:72,h:125,height:999,type:'pillar'}], pots:[{x:145,y:395,mystic:true},{x:815,y:395}], plants:[], vines:[{x:260,y:70,length:210},{x:430,y:70,length:275},{x:610,y:70,length:190},{x:770,y:70,length:250}], hazards:[{type:'heatfloor',x:ROOM.left+14,y:ROOM.top+14,w:ROOM.right-ROOM.left-28,h:ROOM.bottom-ROOM.top-28,interval:5.6,warningDuration:1.25,duration:2.35},{type:'turret',x:850,y:145,dirX:-1,dirY:0,interval:2.2,delay:.4},{type:'turret',x:110,y:335,dirX:1,dirY:0,interval:2.55,delay:1.2}], enemies:[[480,235,'robot']] },
-      { name:'紅蓮機関の玉座', finalBoss:true, bossLives:14, spawnX:142, spawnY:392, obstacles:[], pots:[{x:828,y:112,mystic:true},{x:828,y:400,mystic:true},{x:132,y:112,mystic:true}], plants:[], vines:[{x:205,y:70,length:205},{x:330,y:70,length:285},{x:480,y:70,length:220},{x:630,y:70,length:285},{x:755,y:70,length:205}], hazards:[{type:'heatfloor',x:ROOM.left+8,y:ROOM.top+8,w:ROOM.right-ROOM.left-16,h:ROOM.bottom-ROOM.top-16,alwaysActive:true,safeZones:[{x:78,y:72,w:132,h:106},{x:750,y:72,w:132,h:106},{x:78,y:338,w:142,h:108},{x:742,y:338,w:140,h:108}]},{type:'wallfountain',x:ROOM.left+22,y:388,radius:54,side:'left'},{type:'spikes',x:ROOM.left+8,y:ROOM.top+190,w:ROOM.right-ROOM.left-16,h:34}], enemies:[[260,210,'carrier'],[480,330,'carrier'],[700,205,'carrier'],[480,205,'slimecannon']] },
+      { name:'紅蓮機関の玉座', finalBoss:true, bossLives:14, spawnX:142, spawnY:392, obstacles:[], pots:[{x:828,y:112,mystic:true},{x:828,y:400,mystic:true},{x:132,y:112,mystic:true}], plants:[], vines:[{x:205,y:70,length:205},{x:330,y:70,length:285},{x:480,y:70,length:220},{x:630,y:70,length:285},{x:755,y:70,length:205}], carrierPaths:[{ax:190,ay:205,bx:770,by:205},{ax:770,ay:330,bx:190,by:330},{ax:480,ay:385,bx:480,by:145}], hazards:[{type:'heatfloor',x:ROOM.left+8,y:ROOM.top+8,w:ROOM.right-ROOM.left-16,h:ROOM.bottom-ROOM.top-16,alwaysActive:true,safeZones:[{x:78,y:72,w:132,h:106},{x:750,y:72,w:132,h:106},{x:78,y:338,w:142,h:108},{x:742,y:338,w:140,h:108}]},{type:'wallfountain',x:ROOM.left+22,y:388,radius:54,side:'left'},{type:'spikes',x:ROOM.left+8,y:ROOM.top+190,w:ROOM.right-ROOM.left-16,h:34}], enemies:[[260,210,'carrier'],[480,330,'carrier'],[700,205,'carrier'],[480,205,'slimecannon']] },
     ];
     return rooms[index];
   }
@@ -135,6 +135,14 @@
     vines = (data.vines || []).map((v, i) => ({...v, id:`vine-${currentRoomIndex}-${i}`, sway:Math.random()*Math.PI*2}));
     hazards = (data.hazards || []).map(h => ({...h, pulse:Math.random()*Math.PI*2, timer:-(h.delay || 0), active:false, activeTimer:0}));
     enemies = data.enemies.map(([x,y,w]) => makeEnemy(x,y,w));
+    const carriers = enemies.filter(e => e.passiveRobot);
+    (data.carrierPaths || []).forEach((path, i) => {
+      if (!carriers[i]) return;
+      carriers[i].carrierPath = {...path};
+      carriers[i].carrierPathTarget = 1;
+      carriers[i].x = path.ax;
+      carriers[i].y = path.ay;
+    });
     if (data.bossLives) for (const e of enemies) if (e.isBoss) e.bossLives = data.bossLives;
     particles = []; arrows = []; doorOpen = false; roomCleared = false; shake = 0;
     messageEl.textContent = `第${currentRoomIndex + 1}部屋「${data.name}」— 敵を全員無力化せよ`;
@@ -426,13 +434,17 @@
     }
 
     if (input.jumpPressed && p.attachedEnemy) {
+      const launchX = m > 0 ? mx : p.facingX;
+      const launchY = m > 0 ? my : p.facingY;
       p.attachedEnemy = null;
       p.attachTimer = 0;
-      p.vz = 430;
+      p.vz = 455;
       p.dashJump = true;
-      p.dashJumpX = p.facingX; p.dashJumpY = p.facingY;
+      p.dashJumpX = launchX; p.dashJumpY = launchY;
+      p.x += launchX * 12;
+      p.y += launchY * 12;
       p.airDashUsed = false;
-      messageEl.textContent = 'ロボの頭を蹴ってジャンプした！';
+      messageEl.textContent = '入力した方向へロボの頭を蹴ってジャンプした！';
     } else if (input.jumpPressed && (p.z <= 0.01 || p.wallStick > 0 || p.graceStick > 0)) {
       const fromWall = p.wallStick > 0 || p.graceStick > 0;
       const fromDash = p.dashTimer > 0 && !fromWall;
@@ -638,7 +650,7 @@
         }
       } else {
         gameMode = 'complete';
-        messageEl.textContent = '紅蓮機関のスライムを倒した！ Slime’s Revenge v2.4 クリア！';
+        messageEl.textContent = '紅蓮機関のスライムを倒した！ Slime’s Revenge v2.6 クリア！';
         try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
       }
     }
@@ -1032,7 +1044,26 @@
 
   function updateRobotCombat(e, dt) {
     e.attackTimer -= dt;
-    // ロボットは決められた巡回路を止まらず進む。頭に乗っている間も運搬役として動き続ける。
+    // 運搬ロボは障害物回避AIを使わず、指定された線分を確実に往復する。
+    // トゲ床や灼熱床に進路を塞がれず、頭に乗っている間も止まらない。
+    if (e.passiveRobot && e.carrierPath) {
+      const path = e.carrierPath;
+      const tx = e.carrierPathTarget ? path.bx : path.ax;
+      const ty = e.carrierPathTarget ? path.by : path.ay;
+      const dx = tx - e.x, dy = ty - e.y;
+      const dist = Math.hypot(dx, dy);
+      const step = e.speed * 0.92 * dt;
+      if (dist <= step + 1) {
+        e.x = tx; e.y = ty;
+        e.carrierPathTarget = e.carrierPathTarget ? 0 : 1;
+      } else {
+        e.x += dx / dist * step;
+        e.y += dy / dist * step;
+        e.angle = Math.atan2(dy, dx);
+      }
+      return;
+    }
+    // 攻撃型ロボは従来の巡回・射撃を維持する。
     const target = e.patrolPoints[e.patrolIndex];
     if (moveEnemyToward(e, target.x, target.y, e.speed * 0.82, dt)) {
       e.patrolIndex = (e.patrolIndex + 1) % e.patrolPoints.length;
@@ -1787,8 +1818,10 @@
           const onFloor = player.x>hazard.x && player.x<hazard.x+hazard.w && player.y>hazard.y && player.y<hazard.y+hazard.h;
           const inSafeZone = (hazard.safeZones||[]).some(z => player.x>z.x && player.x<z.x+z.w && player.y>z.y && player.y<z.y+z.h);
           if (onFloor && !inSafeZone && !player.hiddenPot && !player.vineAttached && !ridingRobot && player.z < 22 && player.invuln <= 0) {
-            damagePlayer(1, '灼熱床！ ツタかロボの頭へ避難せよ');
-            player.vz = Math.max(player.vz, 240);
+            if (damagePlayer(1, '灼熱床！ ダメージ中も自由に移動できる。ツタ・ロボ・泉へ避難せよ')) {
+              // 灼熱床では強制ジャンプや位置補正を行わない。無敵時間中に自力で退避できる。
+              player.dashTimer = Math.max(player.dashTimer, 0);
+            }
           }
         }
       } else if (hazard.type === 'turret') {
