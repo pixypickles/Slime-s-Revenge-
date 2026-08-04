@@ -178,7 +178,7 @@
 
   function closeHowTo() { howToScreen.classList.add('hidden'); }
   function openHowTo() { howToScreen.classList.remove('hidden'); }
-  function showTitle() { gameMode = 'title'; closeHowTo(); titleScreen.classList.remove('hidden'); updateContinueButton(); }
+  function showTitle() { gameMode = 'title'; closeHowTo(); titleScreen.classList.remove('hidden'); titleScreen.scrollTop = 0; updateContinueButton(); }
   function startGame(room, saved = null) {
     runStats = saved ? { hp:saved.hp, maxHp:saved.maxHp, maxFruitTaken:[...saved.maxFruitTaken] } : { hp:5, maxHp:5, maxFruitTaken:[] };
     gameMode = 'playing'; titleScreen.classList.add('hidden'); loadRoom(room);

@@ -359,3 +359,57 @@ button {
   .how-to-scroll { padding: 10px 11px 16px; }
   .guide-section { margin-bottom: 12px; }
 }
+
+/* v2.9 縦長端末のタイトルメニュー表示修正 */
+#titleScreen {
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  padding: clamp(8px, 2.2vmin, 18px);
+  scrollbar-gutter: stable both-edges;
+}
+.title-card {
+  margin: auto;
+  max-height: none;
+}
+.title-card button {
+  touch-action: manipulation;
+}
+
+/* 実際のゲーム画面領域が低い時は、ロゴと余白を圧縮して3ボタンを優先する。 */
+@container (max-height: 470px) {
+  #titleScreen { padding: 7px; }
+  .title-card {
+    width: min(82%, 430px);
+    margin: 7px auto;
+    padding: 12px 18px 14px;
+    border-width: 3px;
+    border-radius: 14px;
+    box-shadow: 0 6px 0 #080b11;
+  }
+  .title-kicker { font-size: 9px; margin-bottom: 2px; }
+  .title-card h1 { font-size: clamp(34px, 8cqh, 54px); line-height: .84; }
+  .title-copy { margin: 8px 0 9px; font-size: 12px; }
+  .title-card button {
+    margin-top: 6px;
+    padding: 7px 12px;
+    font-size: 14px;
+    box-shadow: 0 4px 0 #080b11;
+  }
+  #saveStatus { margin-top: 8px; font-size: 10px; }
+}
+
+@container (max-height: 365px) {
+  .title-card {
+    width: min(86%, 405px);
+    padding: 8px 14px 10px;
+  }
+  .title-kicker { display: none; }
+  .title-card h1 { font-size: clamp(29px, 7.6cqh, 43px); }
+  .title-copy { margin: 5px 0 6px; font-size: 10px; }
+  .title-card button { margin-top: 4px; padding: 5px 10px; font-size: 12px; }
+  #saveStatus { margin-top: 6px; font-size: 9px; }
+}
