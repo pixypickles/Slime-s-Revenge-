@@ -1,6 +1,108 @@
 (() => {
   'use strict';
 
+  // v3.0: 外部音声ファイルに依存しない Web Audio 効果音。
+  // モバイルブラウザの制限に合わせ、最初の操作時に AudioContext を解放する。
+  const SFX = (() => {
+    let audio = null;
+    let master = null;
+    let noiseBuffer = null;
+    const cooldowns = new Map();
+
+    function ensure() {
+      if (!audio) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        audio = new AudioCtx();
+        master = audio.createGain();
+        master.gain.value = 0.22;
+        master.connect(audio.destination);
+        noiseBuffer = audio.createBuffer(1, Math.floor(audio.sampleRate * 0.5), audio.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      }
+      if (audio.state === 'suspended') audio.resume().catch(() => {});
+      return audio;
+    }
+
+    function ready(name, gap = 0.03) {
+      const now = performance.now() / 1000;
+      if ((cooldowns.get(name) || 0) > now) return false;
+      cooldowns.set(name, now + gap);
+      return true;
+    }
+
+    function tone(freq, duration, options = {}) {
+      const a = ensure();
+      if (!a) return;
+      const now = a.currentTime + (options.delay || 0);
+      const osc = a.createOscillator();
+      const gain = a.createGain();
+      const filter = a.createBiquadFilter();
+      osc.type = options.type || 'sine';
+      osc.frequency.setValueAtTime(Math.max(20, freq), now);
+      if (options.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, options.to), now + duration);
+      if (options.detune) osc.detune.value = options.detune;
+      filter.type = options.filterType || 'lowpass';
+      filter.frequency.value = options.filter || 6000;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, options.volume || 0.16), now + Math.min(0.012, duration * 0.2));
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.connect(filter); filter.connect(gain); gain.connect(master);
+      osc.start(now); osc.stop(now + duration + 0.03);
+    }
+
+    function noise(duration, options = {}) {
+      const a = ensure();
+      if (!a || !noiseBuffer) return;
+      const now = a.currentTime + (options.delay || 0);
+      const src = a.createBufferSource();
+      const gain = a.createGain();
+      const filter = a.createBiquadFilter();
+      src.buffer = noiseBuffer;
+      filter.type = options.filterType || 'bandpass';
+      filter.frequency.value = options.filter || 1200;
+      filter.Q.value = options.q || 0.8;
+      gain.gain.setValueAtTime(Math.max(0.0002, options.volume || 0.08), now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      src.connect(filter); filter.connect(gain); gain.connect(master);
+      src.start(now); src.stop(now + duration + 0.02);
+    }
+
+    function play(name) {
+      if (!ready(name, name === 'step' ? 0.105 : 0.025)) return;
+      switch (name) {
+        case 'step': tone(150, .055, {to:115, type:'sine', volume:.075, filter:900}); break;
+        case 'dash': noise(.10,{filter:1700,volume:.075}); tone(210,.11,{to:105,type:'triangle',volume:.10}); break;
+        case 'jump': tone(240,.16,{to:510,type:'sine',volume:.14}); tone(120,.10,{to:185,type:'triangle',volume:.055}); break;
+        case 'land': tone(125,.09,{to:75,type:'sine',volume:.13}); noise(.055,{filter:420,volume:.045}); break;
+        case 'slam': noise(.16,{filter:260,volume:.14}); tone(95,.20,{to:42,type:'square',volume:.12,filter:420}); break;
+        case 'stick': tone(390,.07,{to:225,type:'sine',volume:.105}); tone(175,.09,{to:130,type:'triangle',volume:.06}); break;
+        case 'peel': tone(205,.10,{to:360,type:'triangle',volume:.08}); break;
+        case 'vineGrab': tone(310,.08,{to:180,type:'triangle',volume:.09}); noise(.045,{filter:2100,volume:.035}); break;
+        case 'vineJump': tone(170,.18,{to:520,type:'sine',volume:.12}); break;
+        case 'potIn': tone(190,.13,{to:90,type:'sine',volume:.12}); noise(.06,{filter:650,volume:.055}); break;
+        case 'potRoll': tone(105,.09,{to:78,type:'square',volume:.055,filter:350}); break;
+        case 'potBreak': noise(.24,{filter:1100,volume:.15}); tone(165,.13,{to:62,type:'square',volume:.10,filter:800}); break;
+        case 'heal': tone(420,.14,{to:640,type:'sine',volume:.11}); tone(620,.20,{to:910,type:'sine',volume:.09,delay:.07}); break;
+        case 'maxHp': tone(330,.16,{to:520,type:'triangle',volume:.11}); tone(520,.17,{to:780,type:'sine',volume:.10,delay:.10}); tone(780,.22,{to:1040,type:'sine',volume:.09,delay:.20}); break;
+        case 'hurt': noise(.10,{filter:800,volume:.11}); tone(190,.18,{to:72,type:'sawtooth',volume:.105,filter:950}); break;
+        case 'enemyStun': tone(285,.13,{to:115,type:'square',volume:.09,filter:1000}); break;
+        case 'armorOff': noise(.12,{filter:2300,volume:.10}); tone(520,.11,{to:210,type:'square',volume:.08}); break;
+        case 'sword': noise(.11,{filter:2600,volume:.075}); tone(440,.075,{to:190,type:'sawtooth',volume:.055}); break;
+        case 'spear': noise(.09,{filter:3400,volume:.065}); tone(580,.08,{to:310,type:'triangle',volume:.05}); break;
+        case 'arrow': noise(.07,{filter:4300,volume:.055}); tone(850,.06,{to:420,type:'triangle',volume:.035}); break;
+        case 'turret': tone(160,.07,{to:90,type:'square',volume:.07}); noise(.08,{filter:1700,volume:.07}); break;
+        case 'missile': tone(95,.24,{to:175,type:'sawtooth',volume:.075,filter:650}); noise(.15,{filter:900,volume:.05}); break;
+        case 'bossHit': noise(.18,{filter:470,volume:.13}); tone(115,.22,{to:48,type:'square',volume:.11,filter:520}); break;
+        case 'door': tone(170,.20,{to:260,type:'triangle',volume:.08}); tone(260,.26,{to:390,type:'triangle',volume:.08,delay:.12}); break;
+        case 'wind': noise(.42,{filter:850,volume:.09,q:.35}); break;
+        case 'heat': tone(75,.42,{to:125,type:'sawtooth',volume:.075,filter:500}); noise(.38,{filter:520,volume:.075}); break;
+      }
+    }
+    return { play, unlock: ensure };
+  })();
+
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const messageEl = document.getElementById('message');
@@ -66,7 +168,7 @@
       attachedEnemy: null, attachTimer: 0, hurtTimer: 0, hiddenPot: null,
       potCharge: 0, potRolling: false, potRollX: 0, potRollY: -1,
       hp: runStats.hp, maxHp: runStats.maxHp, deathTimer: 0,
-      vineAttached: null, vineGrace: 0, vineAngle: 0, vineAngularVelocity: 0,
+      vineAttached: null, vineGrace: 0, vineAngle: 0, vineAngularVelocity: 0, stepSfxTimer: 0,
     };
   }
 
@@ -343,6 +445,8 @@
   joystick.addEventListener('pointercancel', releaseJoystick);
   joystick.addEventListener('lostpointercapture', releaseJoystick);
 
+  window.addEventListener('pointerdown', () => SFX.unlock(), {passive:true});
+  window.addEventListener('keydown', () => SFX.unlock(), {passive:true});
   resetBtn.addEventListener('click', resetGame);
   startBtn.addEventListener('click', () => { try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(LEGACY_SAVE_KEY); } catch (_) {} startGame(0); });
   continueBtn.addEventListener('click', () => { const saved = readSaveData(); startGame(saved?.room ?? 0, saved); });
@@ -419,6 +523,7 @@
           p.potRollY = my;
           if (p.potCharge >= 0.38) {
             p.potRolling = true;
+            SFX.play('potRoll');
             pot.rolling = true;
             pot.rollSpeed = 455;
             pot.shake = 0;
@@ -447,6 +552,7 @@
       const launchY = m > 0 ? my : p.facingY;
       p.attachedEnemy = null;
       p.attachTimer = 0;
+      SFX.play('vineJump');
       p.vz = 455;
       p.dashJump = true;
       p.dashJumpX = launchX; p.dashJumpY = launchY;
@@ -455,6 +561,7 @@
       p.airDashUsed = false;
       messageEl.textContent = '入力した方向へロボの頭を蹴ってジャンプした！';
     } else if (input.jumpPressed && (p.z <= 0.01 || p.wallStick > 0 || p.graceStick > 0)) {
+      SFX.play('jump');
       const fromWall = p.wallStick > 0 || p.graceStick > 0;
       const fromDash = p.dashTimer > 0 && !fromWall;
 
@@ -491,6 +598,7 @@
     if (input.dashPressed && !p.attachedEnemy) {
       if (p.z > 8 && !p.airDashUsed) {
         p.slam = true;
+        SFX.play('dash');
         p.airDashUsed = true;
         p.diagonalSlam = p.dashJump;
         p.slamX = p.dashJump ? p.dashJumpX : (m > 0 ? mx : p.facingX);
@@ -500,6 +608,7 @@
         burst(p.x, p.y, p.diagonalSlam ? 14 : 9);
       } else if (p.z <= 8 && p.dashCooldown <= 0) {
         p.dashTimer = 0.23;
+        SFX.play('dash');
         p.dashCooldown = 0.42;
         p.invuln = 0.28;
         p.dashX = m > 0 ? mx : p.facingX;
@@ -586,6 +695,7 @@
         }
         if (!p.hiddenPot && p.z <= 0) {
           const impact = p.slam;
+          SFX.play(impact ? 'slam' : 'land');
           p.z = 0;
           p.vz = 0;
           p.slam = false;
@@ -598,6 +708,12 @@
     }
 
     const wall = findStickSurface(p);
+    p.stepSfxTimer = Math.max(0, p.stepSfxTimer - dt);
+    if (m > 0 && p.z <= 0.01 && p.dashTimer <= 0 && !p.slam && !p.hiddenPot && !p.attachedEnemy && p.stepSfxTimer <= 0) {
+      SFX.play('step');
+      p.stepSfxTimer = 0.19;
+    }
+
     if (input.stick && wall && p.z > 3 && !p.attachedEnemy && !p.vineAttached) {
       p.wallStick = 0.12;
       p.graceStick = 0.30;
@@ -670,6 +786,7 @@
     const dx = player.x - best.x;
     const dy = player.y - best.y;
     player.vineAttached = best;
+    SFX.play('vineGrab');
     player.vineAngle = clamp(Math.atan2(dx, Math.max(12, dy)), -1.05, 1.05);
     player.vineAngularVelocity = 0;
     player.vineGrace = 0.34;
@@ -715,6 +832,7 @@
     const direction = Math.sign(p.vineAngularVelocity || 1);
     const speed = Math.abs(p.vineAngularVelocity) * p.vineAttached.length;
     p.vineAttached = null;
+    SFX.play(jump ? 'vineJump' : 'peel');
     p.vineGrace = 0;
     p.dashJump = true;
     p.dashJumpX = tangentX * direction;
@@ -735,13 +853,14 @@
       messageEl.textContent = `${e.bossType === 'chain' ? '鎖刃の番人' : (e.bossType === 'dual' ? '双刃の剣士' : (e.bossType === 'crossbow' ? '乱弩王' : (e.bossType === 'slimecannon' ? '紅蓮機関のスライム' : 'ボス')))}の装甲を破った！ 残り${e.bossLives}段階`;
       return false;
     }
-    e.state = 'stunned'; e.stateTimer = 999; burst(e.x,e.y,e.isBoss ? 42 : 16);
+    e.state = 'stunned'; e.stateTimer = 999; SFX.play(e.isBoss ? 'bossHit' : 'enemyStun'); burst(e.x,e.y,e.isBoss ? 42 : 16);
     return true;
   }
 
   function checkDoorOpen() {
     if (!doorOpen && enemies.every((e) => e.passiveRobot || e.state === 'stunned')) {
       doorOpen = true;
+      SFX.play('door');
       const fruit = plants.some(p => p.fruitReady && !p.consumed);
       messageEl.textContent = fruit ? '敵を全員倒した！ 植物に実がなった。くっつきで吸収できる！' : '扉が開いた！ 上の出口へ！';
     }
@@ -750,6 +869,7 @@
   function enterPot(pot, viaSlam = false) {
     const p = player;
     p.hiddenPot = pot;
+    SFX.play('potIn');
     p.x = pot.x;
     p.y = pot.y + 4;
     p.z = 0;
@@ -788,12 +908,14 @@
     pot.rollSpeed = 0;
     pot.shake = 0;
     burst(pot.x, pot.y, broken ? 22 : 10);
+    if (!broken) SFX.play('jump');
     messageEl.textContent = broken ? '壺が割れ、スライムが勢いよく飛び出した！' : '壺から飛び出した！';
   }
 
   function breakPot(pot, cause, hitEnemy = null) {
     if (pot.broken) return;
     pot.broken = true;
+    SFX.play('potBreak');
     pot.rolling = false;
     pot.rollSpeed = 0;
     shake = Math.max(shake, 9);
@@ -1176,6 +1298,7 @@
       const base = Math.atan2(player.y - e.y, player.x - e.x);
       for (const spread of [-0.12, 0.12]) {
         const a = base + spread;
+        SFX.play('missile');
         arrows.push({x:e.x+Math.cos(a)*48,y:e.y+Math.sin(a)*48,vx:Math.cos(a)*245,vy:Math.sin(a)*245,angle:a,radius:11,life:4.2,owner:e,missile:true,bossBolt:true,turnRate:1.05});
       }
       burst(e.x + Math.cos(base) * 40, e.y + Math.sin(base) * 40, 12);
@@ -1221,6 +1344,7 @@
   }
 
   function fireBossBolt(e, angle, speed=560) {
+    SFX.play('arrow');
     arrows.push({x:e.x+Math.cos(angle)*38,y:e.y+Math.sin(angle)*38,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,angle,radius:8,life:2.5,owner:e,bossBolt:true});
   }
 
@@ -1298,6 +1422,7 @@
   }
 
   function fireArrow(e) {
+    SFX.play('arrow');
     const a = e.attackAngle;
     arrows.push({ x:e.x + Math.cos(a)*32, y:e.y + Math.sin(a)*32, vx:Math.cos(a)*430, vy:Math.sin(a)*430, angle:a, radius:7, life:2.2, owner:e });
     burst(e.x + Math.cos(a)*28, e.y + Math.sin(a)*28, 5);
@@ -1498,6 +1623,7 @@
   function damagePlayer(amount, message) {
     if (player.invuln > 0 || player.hurtTimer > 0 || player.deathTimer > 0) return false;
     player.hp = Math.max(0, player.hp - amount);
+    SFX.play('hurt');
     runStats.hp = player.hp;
     player.hurtTimer = 0.8;
     player.invuln = Math.max(player.invuln, 0.65);
@@ -1518,6 +1644,7 @@
     const before = player.hp;
     player.hp = Math.min(player.maxHp, player.hp + amount);
     runStats.hp = player.hp;
+    SFX.play(player.hp > before ? 'heal' : 'stick');
     messageEl.textContent = player.hp > before ? message : 'HPは満タンです';
     saveProgress();
   }
@@ -1571,7 +1698,7 @@
         plant.consumed = true;
         plant.fruitReady = false;
         if (plant.type === 'max') {
-          player.maxHp += 1;
+          player.maxHp += 1; SFX.play('maxHp');
           player.hp = Math.min(player.maxHp, player.hp + 1);
           runStats.maxHp = player.maxHp;
           runStats.hp = player.hp;
@@ -1685,6 +1812,7 @@
         p.dashTimer = 0;
         if (e.isHeavy && e.shieldOn) {
           e.shieldOn = false;
+          SFX.play('armorOff');
           messageEl.textContent = '重装歩兵を転ばせて盾を手放させた！';
           burst(e.x + Math.cos(e.angle) * 28, e.y + Math.sin(e.angle) * 28, 20);
         }
@@ -1695,6 +1823,7 @@
       const faceAttachRange = e.weapon === 'spear' ? 57 : 48;
       if (input.stickPressed && p.z > 26 && dist < faceAttachRange && e.faceCooldown <= 0 && e.state !== 'stunned' && e.bossType !== 'slimecannon') {
         p.attachedEnemy = e;
+        SFX.play('stick');
         p.attachTimer = 0;
         e.faceCooldown = 0.5;
         e.attackState = 'idle';
@@ -1713,6 +1842,7 @@
   }
 
   function slamImpact() {
+    SFX.play('slam');
     shake = 8;
     burst(player.x, player.y, 22);
     for (const e of enemies) {
@@ -1832,6 +1962,7 @@
           hazard.warning = !hazard.active && hazard.timer >= interval - warningDuration;
           if (!hazard.active && hazard.timer >= interval) {
             hazard.active = true; hazard.warning = false; hazard.activeTimer = hazard.duration || 2.2; hazard.timer = 0;
+            SFX.play('heat');
             messageEl.textContent = '古代兵器が起動！ 床全体が灼熱化する！'; shake = Math.max(shake, 7);
           }
         }
@@ -1852,6 +1983,7 @@
         if (hazard.timer >= (hazard.interval || 2.5)) {
           hazard.timer = 0;
           const a=Math.atan2(hazard.dirY || 0, hazard.dirX || -1);
+          SFX.play('turret');
           arrows.push({x:hazard.x,y:hazard.y,vx:Math.cos(a)*470,vy:Math.sin(a)*470,angle:a,radius:7,life:2.4,owner:null,trap:true});
           burst(hazard.x,hazard.y,6);
         }
